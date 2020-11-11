@@ -105,7 +105,7 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(headerMap));
         //testPlanTree.add(testPlan,ConfigElement.jdbcDataSet());
         //testPlanTree.add(testPlan,ConfigElement.JdbcConnection());
-        ThreadGroup threadGroup = ThreadGroups.create(new TheadGroupEntity());                
+        ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
         ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
         
         

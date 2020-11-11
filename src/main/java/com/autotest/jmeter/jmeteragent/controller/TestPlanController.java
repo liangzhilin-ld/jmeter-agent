@@ -1,7 +1,9 @@
 package com.autotest.jmeter.jmeteragent.controller;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,16 +12,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autotest.data.mapper.ApiHeaderMapper;
+import com.autotest.data.mapper.ApiSwaggerMapper;
 import com.autotest.data.mapper.ApiTestcaseMapper;
 import com.autotest.data.mapper.SyetemDbMapper;
 import com.autotest.data.mapper.TheadGroupConfigMapper;
+import com.autotest.data.mode.ApiHeader;
+import com.autotest.data.mode.ApiSwagger;
 import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.TheadGroupConfig;
+import com.autotest.data.mode.UserDefinedVariable;
 //import com.techstar.dmp.jmeteragent.bean.Response;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
+import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestPlanServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
+import cn.hutool.core.bean.BeanUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -117,20 +127,27 @@ public class TestPlanController {
 	private TheadGroupConfigMapper theadGroup;
 	@Autowired
 	private ApiTestcaseMapper testcaseMapper;
-
+	private @Autowired ApiSwaggerMapper swaggerMapper;
 	private @Autowired SyetemDbMapper systemDbMapper;
-
+	private @Autowired TestDataServiceImpl testData;
+	private @Autowired ApiHeaderMapper headermapper;
+	
 	@ApiOperation(value = "数据库调试")
 	@RequestMapping(value = "/getDtest", method = RequestMethod.GET)
-	public List<TheadGroupConfig> getDtest() {
+	public List<ApiHeader> getDtest() {
 
-		QueryWrapper<TheadGroupConfig> queryWrapper = new QueryWrapper<>();
+		Wrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
 		// theadGroup.selectList(queryWrapper);
 
 //		System.out.println(systemDbMapper.);
 		//testcaseMapper.selectList(queryWrapper);
-
+		List<ApiHeader> headers=testData.getApiHeader();
+		Map<String, String> headerMap=new HashMap<String, String>();
+		for (ApiHeader apiHeader : headers) {
+			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
+		}
+		
 //        return testcaseMapper.selectList(queryWrapper);
-		return theadGroup.selectList(queryWrapper);
+		return headers;
 	}
 }
