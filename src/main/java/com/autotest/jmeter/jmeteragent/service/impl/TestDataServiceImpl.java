@@ -28,8 +28,9 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired TestScheduledServiceImpl testSchedule;
 	private @Autowired ApiReportServiceImpl apiReport;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
+	private @Autowired  ProjectManageServiceImpl projectManage;
 	private List<ApiHeader> headers;
-	
+
 	@Override
 	public List<ApiHeader> getApiHeader() {
 		List<ApiHeader> apiHeaders=apiHeader.list();
@@ -37,14 +38,15 @@ public class TestDataServiceImpl implements TestDataService {
 		return apiHeaders;
 	}
 	
-	public Map<String, String>  getTestPlanHeader(int projectID){
+	public Map<String, String> getTestPlanHeader(int projectID){
+		getApiHeader();
 		Map<String, String> headerMap=new HashMap<String, String>();
 		for (ApiHeader header : headers) {
-			if(header.getProjectId().equals(projectID))
+			if(header.getProjectId().equals(projectID)&&header.getType().equals("0"))
 				headerMap.put(header.getKey(), header.getValue());
 		}
 		return headerMap;
-	}
+	} 
 	public Map<String, String>  getSamplerHeader(int projectID,int caseID){
 		Map<String, String> headerMap=new HashMap<String, String>();
 		for (ApiHeader header : headers) {
@@ -71,5 +73,14 @@ public class TestDataServiceImpl implements TestDataService {
 	public List<UserDefinedVariable> getUserDefinedVar() {
 		return userDefinedVar.list();
 	}
+	public ProjectManage getPoject(String projetID) {
+		List<ProjectManage> list=projectManage.list();
+		for (ProjectManage projectManage : list) {
+			if(projectManage.getProjectId().equals(projetID)) {}
+				return projectManage;
+		}
+		return null;
+	}
+
 	
 }

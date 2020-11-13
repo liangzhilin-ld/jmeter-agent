@@ -142,11 +142,11 @@ public class TestPlanController {
 //		System.out.println(systemDbMapper.);
 		//testcaseMapper.selectList(queryWrapper);
 		List<ApiHeader> headers=testData.getApiHeader();
-		Map<String, String> headerMap=new HashMap<String, String>();
-		for (ApiHeader apiHeader : headers) {
-			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
-		}
-		
+//		Map<String, String> headerMap=new HashMap<String, String>();
+//		for (ApiHeader apiHeader : headers) {
+//			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
+//		}
+		Map<String, String> headerMap=testData.getTestPlanHeader(1);
 //        return testcaseMapper.selectList(queryWrapper);
 		return headers;
 	}

@@ -1,25 +1,38 @@
-package com.autotest.jmeter.jmeteragent.config;
+package com.autotest.jmeter.jmeteragent.service.impl;
 
 
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.ProjectManage;
+import com.autotest.data.mode.UserDefinedVariable;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.ThreadGroups;
+import com.autotest.jmeter.entity.theadgroup.TheadGroupEntity;
 //import com.techstar.dmp.jmeteragent.bean.*;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
+
+import cn.hutool.core.util.StrUtil;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.rmi.activation.ActivationGroup_Stub;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import org.apache.jmeter.control.LoopController;
 import org.apache.jmeter.config.Arguments;
@@ -48,23 +61,14 @@ import com.alibaba.fastjson.JSON;
  * @Date 2020/6/17 9:16
  * @Description 创建jmeter测试计划
  */
-public class TestPlanCreator2 {
+@Service
+public class TestPlanCreator {
 
-    private static final Logger log = LoggerFactory.getLogger(TestPlanCreator2.class);
-
-    private String jsonString;
-    private JmeterProperties jmeterProperties;	
+    private static final Logger log = LoggerFactory.getLogger(TestPlanCreator.class);
+    private @Autowired TestDataServiceImpl testData;
+    private @Autowired JmeterProperties jmeterProperties;	
 	private int engineCount;
-
-    public TestPlanCreator2(JmeterProperties jmeterProperties, String jsonString) throws URISyntaxException {
-        this.jmeterProperties = jmeterProperties;
-        this.jsonString = jsonString;
-//        this.initParam();
-    }
-    public TestPlanCreator2(String jsonString) throws URISyntaxException {
-        this.jsonString = jsonString;
-       // this.initParam();
-    } 
+ 
     private int getEngineCount() {
 	    JMeterUtils.loadJMeterProperties(this.jmeterProperties.getHome() + "\\" + this.jmeterProperties.getPropertiesFileName());
 	    this.engineCount = JMeterUtils.getProperty("remote_hosts").split(",").length;
@@ -77,76 +81,50 @@ public class TestPlanCreator2 {
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
         
         //-------------------------------------------------------------------------------------------
-        Map<String, String> headerMap=new HashMap<String, String>() {
-			private static final long serialVersionUID = 3823206455638368097L;
-			{
-                put("Referer", "http://${host}:${port}/");
-                put("Accept-Language", "zh-CN,zh;q=0.9");
-                put("Origin", "http://${host}:${port}");
-                put("Content-Type", "application/json");
-                put("Accept-Encoding", "gzip, deflate");
-                put("Accept", "application/json, text/plain, */*");
-                put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36");
-                put("Authorization", "Bearer ${author}");
-                put("Connection", "keep-alive");
-            }
-        };
-        testPlanTree.add(testPlan, getArguments());
+        log.info("创建公共配置");
+        testPlanTree.add(testPlan, getArguments("1"));
         testPlanTree.add(testPlan,ConfigElement.httpDefaultsGui());
         testPlanTree.add(testPlan,ConfigElement.createCookieManager());
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
-        testPlanTree.add(testPlan,ConfigElement.createHeaderManager(headerMap));
+        testPlanTree.add(testPlan,ConfigElement.createHeaderManager(testData.getTestPlanHeader(1)));
         //testPlanTree.add(testPlan,ConfigElement.jdbcDataSet());
         //testPlanTree.add(testPlan,ConfigElement.JdbcConnection());
-//        ThreadGroup threadGroup = ThreadGroups.create();                
-//        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
-        
-        
-//        ApiTestcase casess=new ApiTestcase();
-//        casess.setApiUri("/auth/g");
-//        casess.setApiMethod("GET");
-//        Map<String, String> header=new HashMap();
-//        TechstarHTTPSamplerProxy examplecomSampler=HTTPSampler.crtHTTPSampler(casess,header);
+        log.info("创建线程组");
+        ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
+        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
+        log.info("添加登陆组件");
+        threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
+        log.info("添加接口数据");
+        List<ApiTestcase>  listcase=testData.getTestcase();
+        Map<String, String> header=new HashMap();
+        for (ApiTestcase api : listcase) {
+        	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
+        	ListedHashTree testApiTree = new ListedHashTree(sampler);
+//        	if(api.getApiPre().equals("1")) {}
+//        	if(api.getTcPost().equals("1")) {}
+//        	if(api.getCheckPoint().equals("1")) {}
+//        	if(!api.getTcVar().isEmpty()) {}
+//        	if(api.getConfigElement().equals("1")) {}
+//        	if(api.getPreCases().equals("1")) {}
+//        	if(!api.getAttachment().isEmpty()) {}
+//        	if(api.getApiIn().equals("query")) {}
+        	threadGroupHashTree.add(threadGroup, testApiTree);
+		}
         //----------------------------------------------------------------------------
 
-        log.info("创建线程组");
-        ThreadGroup threadGroup = createThreadGroup();
-        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
+       
 
         log.info("添加http请求头管理器");
-        HeaderManager headerManager = createHeaderManager();
-
+ 
         log.info("添加用户自定义变量");
-        Arguments arguments = createArguments();
-        threadGroupHashTree.add(threadGroup, arguments);
-
         log.info("创建循环控制器");
-        //LoopController loopController = createLoopController();
-        //threadGroup.setSamplerController(loopController);
-
         log.info("创建http请求收集器");
         log.info("创建http请求");
-        TechstarHTTPSamplerProxy examplecomSampler = createHTTPSamplerProxy(headerManager);
-        ListedHashTree httpSamplerHashTree = new ListedHashTree(examplecomSampler);
         log.info("创建预处理条件");
-        BeanShellPreProcessor beanShellPreProcessor = createBeanShellPreProcessor();
-        httpSamplerHashTree.add(examplecomSampler, beanShellPreProcessor);
-        log.info("设置断言");
-        threadGroupHashTree.add(threadGroup, httpSamplerHashTree);
-
+        log.info("设置断言"); 
+        
         testPlanTree.add(testPlan, threadGroupHashTree);
         return testPlanTree;
-
-    }
-
-    /**
-     * http请求头管理器
-     */
-    public static HeaderManager createHeaderManager() {
-        HeaderManager headerManager = new HeaderManager();
-        Header header = new Header("Content-Type", "application/json;charset=UTF-8");
-        headerManager.add(header);
-        return headerManager;
     }
 
     /**
@@ -279,108 +257,43 @@ public class TestPlanCreator2 {
         return beanShellPostProcessor;
     }
 
-    /* *//*
-     * 创建beanshell前置处理器
-     *//*
-	public static BeanShellPreProcessor createBeanShellPreProcessor(TestCase tc) {
-		BeanShellPreProcessor beanShellPreProcessor = new BeanShellPreProcessor();
-		String script=String.format("import java.util.UUID;\r\n" + 
-				"\r\n" + 
-				"public String mock_uuid(){\r\n" + 
-				"	return UUID.randomUUID().toString().replaceAll(\"-\",\"\");\r\n" + 
-				"}\r\n" + 
-				"vars.put(\"param\", \"%s\");",tc.getRequestBody().replace("\"", "\\\""));
-		beanShellPreProcessor.setScript(script);
-		beanShellPreProcessor.setProperty("script", script);
-		return beanShellPreProcessor;
-	}
-	
-	*//**
-     * 创建beanshell后置处理器
-     *//*
-	public static BeanShellPostProcessor createBeanShellPostProcessor() {
-		BeanShellPostProcessor beanShellPostProcessor = new BeanShellPostProcessor();
-		String s = "import java.io.*;\r\n" + 
-				"import redis.clients.jedis.Jedis;\r\n" + 
-				"\r\n" + 
-				"Jedis jedis = new Jedis(\"localhost\",6379);\r\n" + 
-				"String response=\"\";\r\n" + 
-				"String Str = \"{\\\"status\\\":200\";\r\n" + 
-				"response = prev.getResponseDataAsString();\r\n" + 
-				"if(response==\"\"){\r\n" + 
-				"	Failure = true;\r\n" + 
-				"	FailureMessage=\"系统无响应，获取不到响应数据！\";\r\n" + 
-				"	log.info(FailureMessage);\r\n" + 
-				"}else if(response.contains(Str)==false){\r\n" + 
-				"	Failure=true;\r\n" + 
-				"	String Msg =\"响应结果与期望不一致，请排查性能问题，还是程序代码问题\";\r\n" + 
-				"	FailureMessage = Msg + \"期望结果:\" + Str+\",\" + \"响应内容:\"+ response;\r\n" + 
-				"	jedis.zadd(\"errorLog\", 0, FailureMessage);\r\n" + 
-				"}";
-		beanShellPostProcessor.setScript(s);
-		beanShellPostProcessor.setProperty("script", s);
-		return beanShellPostProcessor;
-	}*/
-
-    /**
-     * 创建response断言
-     *
-     * @return
-     */
-//    public static ResponseAssertion createResponseAssertion() {
-//        ResponseAssertion responseAssertion = new ResponseAssertion();
-//        responseAssertion.setTestFieldResponseDataAsDocument();
-//        String assertionType = tc.getAssertion().getValidateType();
-//        if (assertionType == null) {
-//            return null;
-//        }
-//        if (assertionType.equals("text")) {
-//            responseAssertion.setToEqualsType();
-//        } else if (assertionType.equals("regex")) {
-//            responseAssertion.setToMatchType();
-//        }
-//        responseAssertion.addTestString(tc.getAssertion().getPattern());
-//        return responseAssertion;
-//    }
-
-    /**
-     * 创建json断言
-     *
-     * @return
-     */
-//    public static List<JSONPathAssertion> createJSONPathAssertion(TestCase tc) {
-//        List<JSONPathAssertion> jsonPathAssertions = new ArrayList<JSONPathAssertion>();
-//        List<JsonPathAssert> paths = tc.getAssertion().getPaths();
-//        for (JsonPathAssert path : paths) {
-//            JSONPathAssertion jsonPathAssertion = new JSONPathAssertion();
-//            jsonPathAssertion.setJsonPath(path.getPath());
-//            jsonPathAssertion.setExpectedValue(path.getExpectedValue());
-//            jsonPathAssertions.add(jsonPathAssertion);
-//        }
-//        return jsonPathAssertions;
-//    }
     
-    
-	public Arguments getArguments() {
+	/**
+	 * 用户自定义变量
+	 * @return
+	 */
+	public Arguments getArguments(String projectID) {
    	 //自定义变量
-       List<String[]> definedVars = new ArrayList<>();
-       String[] host= {"host","172.16.206.69"};//128
-       String[] port= {"port","6600"};//8888
-       String[] userName= {"userName","xtgly"};//zhengyanlin
-       String[] pwd= {"pwd","a1234567"};//admin@123
-       String[] sleep= {"sleep","5000"};
-       String[] sysid= {"sysid","266946423468851203"};
-       String[] smDecryptKey= {"smDecryptKey","e9664b2bebccb6fe80da086044608115"};
-       String[] users= {"users","${__P(users,1)}"};
-       definedVars.add(host);
+	   ProjectManage pro=testData.getPoject(projectID);
+	   List<String[]> definedVars = new ArrayList<>();
+	   List<UserDefinedVariable> listDefine=testData.getUserDefinedVar();
+	   for (UserDefinedVariable userDefine : listDefine) {
+		   String[] record= {userDefine.getName(),userDefine.getValue()};//
+		   definedVars.add(record);
+	   }
+	   String[] host= {"host",pro.getTestIp()};
+	   String[] port= {"port",pro.getTestPort()};
+	   definedVars.add(host);
        definedVars.add(port);
-       definedVars.add(userName);
-       definedVars.add(pwd);
-       definedVars.add(sleep);
-       definedVars.add(sysid);
-       definedVars.add(smDecryptKey);
-       definedVars.add(users);
+       //List<String[]> definedVars = new ArrayList<>();
+//       String[] host= {"host","172.16.206.127"};//
+//       String[] port= {"port","31100"};//8888
+//       String[] userName= {"userName","xtgly"};//zhengyanlin
+//       String[] pwd= {"pwd","a1234567"};//admin@123   a1234567
+//       String[] sleep= {"sleep","5000"};
+//       String[] sysid= {"sysid","266946423468851203"};
+//       String[] smDecryptKey= {"smDecryptKey","e9664b2bebccb6fe80da086044608115"};
+//       String[] users= {"users","${__P(users,1)}"};
+//       definedVars.add(host);
+//       definedVars.add(port);
+//       definedVars.add(userName);
+//       definedVars.add(pwd);
+//       definedVars.add(sleep);
+//       definedVars.add(sysid);
+//       definedVars.add(smDecryptKey);
+//       definedVars.add(users);
        Arguments value = ConfigElement.createArguments(definedVars);
        return value;
    }
+
 }
