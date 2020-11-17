@@ -29,6 +29,8 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired ApiReportServiceImpl apiReport;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
 	private @Autowired  ProjectManageServiceImpl projectManage;
+	private @Autowired  ProcessorJdbcServiceImpl jdbcProcess;
+	private @Autowired  SyetemDbServiceImpl sysDb;
 	private List<ApiHeader> headers;
 
 	@Override
@@ -82,5 +84,20 @@ public class TestDataServiceImpl implements TestDataService {
 		return null;
 	}
 
-	
+	public ProcessorJdbc getProcessorJdbc(int id) {
+		List<ProcessorJdbc> list=jdbcProcess.list();
+		for (ProcessorJdbc processor : list) {
+			if(processor.getCaseId().equals(id)) {}
+				return processor;
+		}
+		return null;
+	}
+	public SyetemDb getSyetemDb(String cnnName) {
+		List<SyetemDb> list=sysDb.list();
+		for (SyetemDb dbinfo : list) {
+			if(dbinfo.getCnnName().equals(cnnName)) {}
+				return dbinfo;
+		}
+		return null;
+	}
 }

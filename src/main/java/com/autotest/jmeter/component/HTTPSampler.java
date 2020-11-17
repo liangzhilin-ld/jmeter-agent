@@ -2,27 +2,26 @@ package com.autotest.jmeter.component;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
+import java.util.Map.Entry;
 import org.apache.jmeter.assertions.BeanShellAssertion;
 import org.apache.jmeter.assertions.ResponseAssertion;
 import org.apache.jmeter.control.OnceOnlyController;
-import org.apache.jmeter.extractor.BeanShellPostProcessor;
 import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
-import org.apache.jmeter.modifiers.BeanShellPreProcessor;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
-import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerFactory;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
+import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.ListedHashTree;
-
 import com.autotest.data.mode.ApiTestcase;
 import com.autotest.jmeter.entity.assertion.ResponseAssert;
 import com.autotest.jmeter.entity.processors.JSONExtractor;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 //import com.autotest.data.mode.ApiTestcase;
 
 public class HTTPSampler {
@@ -76,12 +75,57 @@ public class HTTPSampler {
         httpSampler.setFollowRedirects(true);
         httpSampler.setUseKeepAlive(true);
         httpSampler.setDoMultipart(false);
-        httpSampler.setPostBodyRaw(true);    
-        httpSampler.addNonEncodedArgument("",testApi.getParameters(),"");
-        httpSampler.setHeaderManager(headerManager);
+        httpSampler.setHeaderManager(headerManager);  
+        if(testApi.getApiIn().equals("body")) {
+        	httpSampler.setPostBodyRaw(true);    
+            httpSampler.addNonEncodedArgument("",testApi.getParameters(),"");            
+        }else {
+        	//表单数据参数提交
+        	AddArgumentFromClipboard(httpSampler,testApi.getParameters());
+//        	if(StrUtil.isNotEmpty(testApi.getParameters())) {
+//        		JSONObject jsonOb=JSONUtil.parseObj(testApi.getParameters());
+//        		if(!jsonOb.isEmpty()) {
+//            		for (Entry<String, Object> para : jsonOb.entrySet()) {
+//            			String getValue=StrUtil.isEmptyIfStr(para.getValue())?"":para.getValue().toString();
+//            			httpSampler.addArgument(para.getKey(), getValue);
+//            			//httpSampler.getArguments().addArgument(AddArgumentFromClipboard(para.getKey(), getValue));            			
+//    				}
+//        		}		
+//        	}                        
+        }
         return httpSampler;
     }
+    /**
+     * 向httpSampler提交表单参数，3种调用方式，区别主要是可修改的参数个数不一样
+     * 方法1:AddArgumentFromClipboard(httpSampler,testApi.getParameters());
+     * 方法2:httpSampler.addArgument("name1", "test11");
+     * 方法3:httpSampler.addNonEncodedArgument("name1", "value111", "=", "text/plain");
+     * @param httpSampler  TechstarHTTPSamplerProxy实例对象
+     * @param args 从api_testcase表中读取的json请求字符串内容
+     */
+    public static void AddArgumentFromClipboard(TechstarHTTPSamplerProxy httpSampler,String args) {    	
+    	if(StrUtil.isNotEmpty(args)) {
+    		JSONObject jsonOb=JSONUtil.parseObj(args);
+    		if(!jsonOb.isEmpty()) {
+        		for (Entry<String, Object> para : jsonOb.entrySet()) {
+        			String getValue=StrUtil.isEmptyIfStr(para.getValue())?"":para.getValue().toString();
+        	    	HTTPArgument argument = new HTTPArgument("", "");	    	
+        	        argument.setName(para.getKey());//参数名称
+        	        argument.setValue(getValue); //参数值
+        	        argument.setAlwaysEncoded(false);//URL_Encode?
+        	        argument.setContentType("text/plain");//默认
+        	        argument.setUseEquals(true);//Include_Equals?
+        	        argument.setMetaData("=");//参数与值之间的分隔符，默认=号        	        
+        			httpSampler.getArguments().addArgument(argument);           			
+				}
+    		}		
+    	}
+    }
     
+    /**
+     * 接口测试登陆方法
+     * @return
+     */
     public static ListedHashTree loginControll() {
     	OnceOnlyController onceController=LogicController.onceOnlyController();
     	ListedHashTree onceControllerTree=new ListedHashTree(onceController); 
@@ -89,7 +133,8 @@ public class HTTPSampler {
     	//g接口添加
         casess.setApiUri("/auth/g");
         casess.setApiMethod("GET");
-        Map<String, String> header=new HashMap();
+        casess.setApiIn("query");
+        Map<String, String> header=new HashMap<String, String>();
         TechstarHTTPSamplerProxy gSampler=HTTPSampler.crtHTTPSampler(casess,header);
         ListedHashTree gHashTree = new ListedHashTree(gSampler);
     	
@@ -142,6 +187,7 @@ public class HTTPSampler {
 
         casess.setApiUri("/auth/login/pw");
         casess.setApiMethod("POST");
+        casess.setApiIn("body");
         casess.setParameters("{\"username\":\"${username}\",\"password\":\"${password}\",\"icode\":\"${icode}\",\"deviceId\":\"${deviceId}\",\"id\":\"${id}\"}");
         TechstarHTTPSamplerProxy pwSampler=HTTPSampler.crtHTTPSampler(casess,header);
         ListedHashTree pwHashTree = new ListedHashTree(pwSampler);
@@ -157,11 +203,6 @@ public class HTTPSampler {
         ra.setTestString(Arrays.asList("认证成功"));
         ResponseAssertion pwResponse=Assertions.responseAssertion(ra);         
         pwHashTree.add(pwSampler, pwResponse); 
-        
-        
-        
-        
-        
         onceControllerTree.add(onceController,gHashTree);
         onceControllerTree.add(onceController,imageHashTree);
         onceControllerTree.add(onceController,pwHashTree);

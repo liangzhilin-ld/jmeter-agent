@@ -2,10 +2,14 @@ package com.autotest.jmeter.jmeteragent.service.impl;
 
 
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.ProcessorJdbc;
 import com.autotest.data.mode.ProjectManage;
+import com.autotest.data.mode.SyetemDb;
 import com.autotest.data.mode.UserDefinedVariable;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
+import com.autotest.jmeter.component.PostProcessors;
+import com.autotest.jmeter.component.PreProcessors;
 import com.autotest.jmeter.component.ThreadGroups;
 import com.autotest.jmeter.entity.theadgroup.TheadGroupEntity;
 //import com.techstar.dmp.jmeteragent.bean.*;
@@ -87,8 +91,8 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan,ConfigElement.createCookieManager());
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(testData.getTestPlanHeader(1)));
-        //testPlanTree.add(testPlan,ConfigElement.jdbcDataSet());
-        //testPlanTree.add(testPlan,ConfigElement.JdbcConnection());
+        testPlanTree.add(testPlan,ConfigElement.jdbcDataSet(testData.getSyetemDb("mysql"),"select * from api_swagger",""));       
+        testPlanTree.add(testPlan,ConfigElement.JdbcConnection(testData.getSyetemDb("mysql")));
         log.info("创建线程组");
         ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
         ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
@@ -101,7 +105,11 @@ public class TestPlanCreator {
         	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
         	ListedHashTree testApiTree = new ListedHashTree(sampler);
 //        	if(api.getApiPre().equals("1")) {}
-//        	if(api.getTcPost().equals("1")) {}
+        	if(api.getTcPost().equals("3")) {
+        		ProcessorJdbc pre=testData.getProcessorJdbc(1);        		
+        		testApiTree.add(sampler,PostProcessors.jdbcPostProcessor(pre));
+        		testApiTree.add(sampler,PreProcessors.jdbcPreProcessor(pre));        		
+        	}
 //        	if(api.getCheckPoint().equals("1")) {}
 //        	if(!api.getTcVar().isEmpty()) {}
 //        	if(api.getConfigElement().equals("1")) {}

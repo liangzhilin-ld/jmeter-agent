@@ -12,6 +12,7 @@ import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 
+import com.autotest.data.mode.ProcessorJdbc;
 import com.autotest.jmeter.entity.processors.JSONExtractor;
 
 public class PostProcessors {
@@ -46,22 +47,21 @@ public class PostProcessors {
     		jsonPost.setComputeConcatenation(true);    	
     	return jsonPost;
     }
-    public static JDBCPostProcessor jdbcPostProcessor() {
+    public static JDBCPostProcessor jdbcPostProcessor(ProcessorJdbc postJdbc) {
     	JDBCPostProcessor jdbcPost=new JDBCPostProcessor();
     	jdbcPost.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
     	jdbcPost.setProperty(TestElement.TEST_CLASS,JDBCPostProcessor.class.getName());
     	jdbcPost.setEnabled(true);
-    	jdbcPost.setName("JDBC 后置处理程序");//名称
-    	jdbcPost.setDataSource("");//数据源连接名称
-    	jdbcPost.setQueryType("Callable Statement");
-    	jdbcPost.setQuery("");//sql语句，结尾不能带分号
-    	
-    	jdbcPost.setQueryArguments("");
-    	jdbcPost.setQueryArgumentsTypes("");
-     	jdbcPost.setVariableNames("");//变量名称，按列
-    	jdbcPost.setResultVariable("");//结果存储变量
-    	jdbcPost.setQueryTimeout("");
-    	jdbcPost.setResultSetHandler("Store as String");
+    	jdbcPost.setName("JDBC 后置处理程序");//名称    	
+    	jdbcPost.setProperty("dataSource",postJdbc.getVariableNamePool());
+    	jdbcPost.setProperty("queryType","Callable Statement");
+    	jdbcPost.setProperty("query",postJdbc.getQuery());//sql语句，结尾不能带分号    	
+    	jdbcPost.setProperty("queryArguments","");
+    	jdbcPost.setProperty("queryArgumentsTypes","");
+    	jdbcPost.setProperty("variableNames","");//变量名称，按列
+    	jdbcPost.setProperty("resultVariable","");//结果存储变量
+    	jdbcPost.setProperty("queryTimeout","");
+    	jdbcPost.setProperty("resultSetHandler","Store as String");
     	return jdbcPost;
     }
 	 public static BeanShellPostProcessor beanShellPostProcessor(String script) {

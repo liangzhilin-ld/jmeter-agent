@@ -157,8 +157,9 @@ public class JdbcDataSet extends ConfigTestElement
                     break;
             }
             final String names = getVariableNames();
-            if (StringUtils.isEmpty(names)) {            	
-                vars=server.getVars(getDataSource(),fileName);
+            if (StringUtils.isEmpty(names)) {       
+            	BasicDataSource ds=getDataSource();
+                vars=server.getVars(ds,fileName);
                 if(vars.length==0)throw new IllegalArgumentException("Could not split DB filed from sqlcmd:" + fileName);
                 //firstLineIsNames = true;
             } else {

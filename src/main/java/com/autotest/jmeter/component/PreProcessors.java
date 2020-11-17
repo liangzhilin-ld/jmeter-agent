@@ -6,24 +6,25 @@ import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
 
+import com.autotest.data.mode.ProcessorJdbc;
+
 public class PreProcessors {
 
-	   public static JDBCPreProcessor jdbcPostProcessor() {
+	   public static JDBCPreProcessor jdbcPreProcessor(ProcessorJdbc preJdbc) {
 		   JDBCPreProcessor jdbcPre=new JDBCPreProcessor();
 		   jdbcPre.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
 		   jdbcPre.setProperty(TestElement.TEST_CLASS,JDBCPreProcessor.class.getName());
 		   jdbcPre.setEnabled(true);
-		   jdbcPre.setName("JDBC 预处理程序");//名称
-		   jdbcPre.setDataSource("");//数据源连接名称
-		   jdbcPre.setQueryType("Callable Statement");
-		   jdbcPre.setQuery("");//sql语句，结尾不能带分号
-	    	
-		   jdbcPre.setQueryArguments("");
-		   jdbcPre.setQueryArgumentsTypes("");
-		   jdbcPre.setVariableNames("");//变量名称，按列
-		   jdbcPre.setResultVariable("");//结果存储变量
-		   jdbcPre.setQueryTimeout("");
-		   jdbcPre.setResultSetHandler("Store as String");
+		   jdbcPre.setName("JDBC 预处理程序");//名称		   
+		   jdbcPre.setProperty("dataSource",preJdbc.getVariableNamePool());//数据源连接名称
+		   jdbcPre.setProperty("queryType","Callable Statement");
+		   jdbcPre.setProperty("query",preJdbc.getQuery());//sql语句，结尾不能带分号    	
+		   jdbcPre.setProperty("queryArguments","");
+		   jdbcPre.setProperty("queryArgumentsTypes","");
+		   jdbcPre.setProperty("variableNames","");//变量名称，按列
+		   jdbcPre.setProperty("resultVariable","");//结果存储变量
+		   jdbcPre.setProperty("queryTimeout","");
+		   jdbcPre.setProperty("resultSetHandler","Store as String");
 		   return jdbcPre;
 	    }
 		 

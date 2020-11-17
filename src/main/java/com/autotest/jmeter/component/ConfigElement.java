@@ -31,6 +31,10 @@ import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jorphan.collections.SearchByClass;
 
+import com.autotest.data.mode.SyetemDb;
+
+import cn.hutool.core.util.StrUtil;
+
 public class ConfigElement {
 
     /**
@@ -144,61 +148,69 @@ public class ConfigElement {
     	coolieManager.setProperty(TestElement.TEST_CLASS,CookieManager.class.getName());   	
     	return coolieManager;
     }
-	  /**
+
+    /**
      * JDBC Connection管理器
+     * @param dbInfo   数据库连接信息
      * @return
-     * 
      */
-    public static DataSourceElement JdbcConnection() {
+    public static DataSourceElement JdbcConnection(SyetemDb dbInfo) {    	
     	DataSourceElement jdbcConn=new DataSourceElement();    	
-    	jdbcConn.setName("JDBC Connection Configuration");
+    	jdbcConn.setName("JDBC Connection Configuration");    	
     	jdbcConn.setEnabled(true);
     	jdbcConn.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
     	jdbcConn.setProperty(TestElement.TEST_CLASS,DataSourceElement.class.getName()); 
-    	jdbcConn.setDataSource("mysql");//连接池变量名称
-    	jdbcConn.setPoolMax("0");
-    	jdbcConn.setTimeout("10000");
-    	jdbcConn.setTrimInterval("60000");
-    	jdbcConn.setAutocommit(true);
-    	jdbcConn.setTransactionIsolation("DEFAULT");
-    	jdbcConn.setInitQuery("");
-    	jdbcConn.setKeepAlive(true);
-    	jdbcConn.setConnectionAge("5000");
-    	jdbcConn.setCheckQuery("");
-    	jdbcConn.setDbUrl("jdbc:mysql://172.16.206.82:3306/autoplat?useSSL=FALSE&serverTimezone=UTC"); //数据库地址
-    	jdbcConn.setDriver("com.mysql.jdbc.Driver");//驱动类路径
-    	jdbcConn.setUsername("vbi");  // 用户名 	
-    	jdbcConn.setPassword("123456");//密码
-    	JMeterContextService.startTest();
-    	SearchByClass<TestStateListener> testListeners = new SearchByClass<>(TestStateListener.class);
-    	
-    	//notifyTestListenersOfStart(testListeners);
-    	TestBeanHelper.prepare(jdbcConn);
+    	jdbcConn.setComment("");
+    	jdbcConn.setProperty("dataSource",dbInfo.getCnnName());
+    	jdbcConn.setProperty("poolMax","0");
+    	jdbcConn.setProperty("timeout","10000");
+    	jdbcConn.setProperty("trimInterval","60000");    	
+    	jdbcConn.setProperty("autocommit",true); 
+    	jdbcConn.setProperty("transactionIsolation","DEFAULT"); 
+    	jdbcConn.setProperty("initQuery","");     	
+    	jdbcConn.setProperty("keepAlive",true);     	
+    	jdbcConn.setProperty("connectionAge",5000);
+    	jdbcConn.setProperty("checkQuery","");	
+    	jdbcConn.setProperty("dbUrl",StrUtil.format(
+    			"jdbc:mysql://{}:{}/{}?useSSL=FALSE&serverTimezone=UTC",
+    			dbInfo.getCnnHost(),dbInfo.getCnnPort(),dbInfo.getDbName()));
+    	jdbcConn.setProperty("driver",dbInfo.getDriverClass());//"com.mysql.cj.jdbc.Driver"
+    	jdbcConn.setProperty("username",dbInfo.getUsername());
+    	jdbcConn.setProperty("password",dbInfo.getPassword());
+    	jdbcConn.setProperty("preinit",false);
+    	jdbcConn.setProperty("connectionProperties","");
     	return jdbcConn;
     }
 
-
-
-	  /**
+    /**
      * JDBC Data Set
+     * @param dbInfo    数据库连接信息
+     * @param selectCmmd   sql查询语句
+     * @param variableName  定义后续被引用的变量名称，多个变量用,(逗号)隔开
      * @return
-     * 
      */
-    public static JdbcDataSet jdbcDataSet() {
+    public static JdbcDataSet jdbcDataSet(SyetemDb dbInfo,String selectCmmd,String variableName) {
     	JdbcDataSet jds=new JdbcDataSet();
     	jds.setName("JDBC Data Set Config");
     	jds.setEnabled(true);
     	jds.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
     	jds.setProperty(TestElement.TEST_CLASS,JdbcDataSet.class.getName());
-    	jds.setFilename("select * from api_swagger");//select sid,sname,sage,ssex from student
-    	jds.setRecycle(true);//是否循环
-    	jds.setShareMode("shareMode.all");
-    	jds.setVariableNames("");
-    	jds.setStopThread(false);//当需要取值完成并结束执行时setRecycle设置false,setStopThread设为true
-    	jds.setDbUrl("jdbc:mysql://172.16.206.82:3306/autoplat?useSSL=FALSE&serverTimezone=UTC");//vbi_api
-    	jds.setDriver("com.mysql.jdbc.Driver");
-    	jds.setUsername("vbi");
-    	jds.setPassword("123456");
+    	
+    	jds.setProperty("filename",selectCmmd);//select * from api_swagger
+    	jds.setProperty("recycle",false);//是否循环
+    	jds.setProperty("shareMode","shareMode.all");
+    	jds.setProperty("variableNames",variableName);
+    	jds.setProperty("stopThread",true);//当需要取值完成并结束执行时setRecycle设置false,setStopThread设为true
+//    	jds.setProperty("dbUrl","jdbc:mysql://172.16.206.82:3306/autoplat?useSSL=FALSE&serverTimezone=UTC");
+//    	jds.setProperty("driver","com.mysql.cj.jdbc.Driver");//com.mysql.jdbc.Driver
+//    	jds.setProperty("username","vbi");
+//    	jds.setProperty("password","123456");   	
+    	jds.setProperty("dbUrl",StrUtil.format(
+    			"jdbc:mysql://{}:{}/{}?useSSL=FALSE&serverTimezone=UTC",
+    			dbInfo.getCnnHost(),dbInfo.getCnnPort(),dbInfo.getDbName()));
+    	jds.setProperty("driver",dbInfo.getDriverClass());//"com.mysql.cj.jdbc.Driver"
+    	jds.setProperty("username",dbInfo.getUsername());
+    	jds.setProperty("password",dbInfo.getPassword());
     	return jds;
     }
 
