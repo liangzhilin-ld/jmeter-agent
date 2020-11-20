@@ -8,14 +8,18 @@ import org.apache.jmeter.assertions.BeanShellAssertion;
 import org.apache.jmeter.assertions.ResponseAssertion;
 import org.apache.jmeter.control.OnceOnlyController;
 import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
+import org.apache.jmeter.extractor.json.jsonpath.gui.JSONPostProcessorGui;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerFactory;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
+import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.ListedHashTree;
+
+import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.ApiTestcase;
 import com.autotest.jmeter.entity.assertion.ResponseAssert;
 import com.autotest.jmeter.entity.processors.JSONExtractor;
@@ -23,6 +27,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 //import com.autotest.data.mode.ApiTestcase;
+import kg.apc.jmeter.samplers.DummySampler;
+import kg.apc.jmeter.samplers.DummySamplerGui;
 
 public class HTTPSampler {
     /**
@@ -208,4 +214,38 @@ public class HTTPSampler {
         onceControllerTree.add(onceController,pwHashTree);
         return onceControllerTree;
     }
+
+    /**
+     * Mock接口数据，直接从数据库获取信息，根据URL地址与备注信息进行查找，
+     * @return
+     */
+    public static ListedHashTree mockSampler(ApiMock mockData) {
+    	DummySampler mock=new DummySampler();
+    	mock.setProperty(TestElement.GUI_CLASS,DummySamplerGui.class.getName());
+    	mock.setProperty(TestElement.TEST_CLASS,DummySampler.class.getName());
+    	mock.setEnabled(true);
+    	mock.setName(mockData.getName());//sampler lable标签,一般URI路径
+    	mock.setComment("备注信息");//添加备注
+    	mock.setProperty("URL",mockData.getUrl());//匹配接口,一般URI路径
+    	mock.setProperty("SUCCESFULL",true);
+    	mock.setProperty("RESPONSE_CODE","200");
+    	mock.setProperty("RESPONSE_MESSAGE","OK");
+    	mock.setProperty("CONNECT","${__Random(1,5)}");
+    	mock.setProperty("LATENCY","${__Random(1,50)}");
+    	mock.setProperty("RESPONSE_TIME","${__Random(50,500)}");
+    	mock.setProperty("WAITING",true);
+    	mock.setProperty("REQUEST_DATA",mockData.getRequestData());
+    	mock.setProperty("RESPONSE_DATA",mockData.getResponseData());   	
+    	mock.setProperty("RESULT_CLASS","org.apache.jmeter.samplers.SampleResult");
+        /*
+         * RESULT_CLASS类有有以下三种方式
+         * org.apache.jmeter.samplers.SampleResult
+         * org.apache.jmeter.protocol.http.sampler.HTTPSampleResult
+         * org.apache.jmeter.samplers.StatisticalSampleResult
+         * 
+         */
+    	ListedHashTree mockSamplerTree = new ListedHashTree(mock);
+    	return mockSamplerTree;
+    }
+    
 }

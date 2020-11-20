@@ -31,6 +31,7 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired  ProjectManageServiceImpl projectManage;
 	private @Autowired  ProcessorJdbcServiceImpl jdbcProcess;
 	private @Autowired  SyetemDbServiceImpl sysDb;
+	private @Autowired  ApiMockServiceImpl mockData;
 	private List<ApiHeader> headers;
 
 	@Override
@@ -97,6 +98,14 @@ public class TestDataServiceImpl implements TestDataService {
 		for (SyetemDb dbinfo : list) {
 			if(dbinfo.getCnnName().equals(cnnName)) {}
 				return dbinfo;
+		}
+		return null;
+	}
+	public ApiMock getApiMock(int caseID) {
+		List<ApiMock> list=mockData.list();
+		for (ApiMock mock : list) {
+			if(mock.getCaseId().equals(caseID)) {}
+				return mock;
 		}
 		return null;
 	}

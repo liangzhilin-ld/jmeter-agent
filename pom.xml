@@ -137,6 +137,18 @@
     		<artifactId>commons-collections</artifactId>
     		<version>3.2.2</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/kg.apc/jmeter-plugins-dummy -->
+		<dependency>
+    		<groupId>kg.apc</groupId>
+    		<artifactId>jmeter-plugins-dummy</artifactId>
+    		<version>0.4</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/kg.apc/jmeter-plugins-cmn-jmeter -->
+<dependency>
+    <groupId>kg.apc</groupId>
+    <artifactId>jmeter-plugins-cmn-jmeter</artifactId>
+    <version>0.6</version>
+</dependency>
 		
 		<dependency>
 			<groupId>io.springfox</groupId>

@@ -118,6 +118,7 @@ public class TestPlanCreator {
 //        	if(api.getApiIn().equals("query")) {}
         	threadGroupHashTree.add(threadGroup, testApiTree);
 		}
+        threadGroupHashTree.add(threadGroup,HTTPSampler.mockSampler(testData.getApiMock(1)));
         //----------------------------------------------------------------------------
 
        
