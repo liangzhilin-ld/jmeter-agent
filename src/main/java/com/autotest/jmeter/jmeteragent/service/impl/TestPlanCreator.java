@@ -142,42 +142,43 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan, threadGroupHashTree);
         return testPlanTree;
     }
-    public ListedHashTree preTree(ApiTestcase api) {
-    	ListedHashTree testApiTree =new ListedHashTree();
+ 
+    /**
+     * 前置处理器添加
+     * @param threadGroupHashTree  线程组树
+     * @param threadGroup  线程组对象
+     * @param api  被测接口
+     */
+    public void preProcessAdd(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
+    	Map<String, String> header=new HashMap();
+    	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
+		ListedHashTree testApiTree = new ListedHashTree(sampler);
+		
     	if(api.getApiPre().contains("1")) {
     		ApiTestcase parent=testData.getTestcaseByID(api.getPreCases());
-    		if(parent.getApiPre().length()>0)preTree(parent);
+    		if(parent.getApiPre().length()>0)
+    			preProcessAdd(threadGroupHashTree,threadGroup,parent); 
     		Map<String, String> headers=new HashMap();
     		TechstarHTTPSamplerProxy preSampler=HTTPSampler.crtHTTPSampler(parent,headers);
     		ListedHashTree parentTree = new ListedHashTree(preSampler);
-    		
-//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
-//    		testApiTree = new ListedHashTree(sampler);
+    		threadGroupHashTree.add(threadGroup, parentTree);
     	}
     	if(api.getApiPre().contains("2")) {
     		Beanshell shell=testData.getBeanshell(api.getCaseId());
-    		BeanShellPreProcessor prebeanshell=PreProcessors.beanShellPreProcessor(shell.getScript());
-//    		Map<String, String> headers=new HashMap();
-//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
-//    		testApiTree = new ListedHashTree(sampler);
-//    		testApiTree.add(sampler,prebeanshell);  
+    		BeanShellPreProcessor prebeanshell=PreProcessors.beanShellPreProcessor(shell.getScript());    		
+    		testApiTree.add(sampler,prebeanshell);
     	}
     	if(api.getApiPre().contains("3")) {
     		ProcessorJdbc prejdbc=testData.getProcessorJdbc(api.getCaseId(),"1");
     		JDBCPreProcessor prejdbcpro=PreProcessors.jdbcPreProcessor(prejdbc);
-//    		Map<String, String> headers=new HashMap();
-//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
-//    		testApiTree = new ListedHashTree(sampler);
-//    		testApiTree.add(sampler,prejdbcpro);  
+    		testApiTree.add(sampler,prejdbcpro);  
     	}
     	if(api.getApiPre().contains("4")) {
     		ApiMock dummy=testData.getApiMock(api.getCaseId());
     		ListedHashTree mockTree=HTTPSampler.mockSampler(dummy);
-//    		Map<String, String> headers=new HashMap();
-//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
-//    		testApiTree = new ListedHashTree(sampler); 
+    		threadGroupHashTree.add(threadGroup, mockTree);
     	}
-    	return testApiTree;
+		threadGroupHashTree.add(threadGroup, testApiTree);
     }
     /**
      * 创建用户自定义变量
