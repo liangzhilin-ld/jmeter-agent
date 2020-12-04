@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.autotest.data.mode.*;
 import com.autotest.data.service.impl.*;
 import com.autotest.jmeter.jmeteragent.service.TestDataService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 /**
  * @author Techstar
@@ -32,6 +33,8 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired  ProcessorJdbcServiceImpl jdbcProcess;
 	private @Autowired  SyetemDbServiceImpl sysDb;
 	private @Autowired  ApiMockServiceImpl mockData;
+	private @Autowired  BeanshellServiceImpl beanshell;
+	
 	private List<ApiHeader> headers;
 
 	@Override
@@ -70,6 +73,11 @@ public class TestDataServiceImpl implements TestDataService {
 	public List<TheadGroupConfig> getTheadGroupConfig() {
 		return theadGroupConfig.list();
 	}
+	public ApiTestcase getTestcaseByID(String id) {
+		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.eq("CASE_ID", Integer.valueOf(id));
+		return apiTestcase.getOne(queryWrapper);
+	}
 	public List<ApiTestcase> getTestcase() {
 		return apiTestcase.list();
 	}
@@ -85,10 +93,11 @@ public class TestDataServiceImpl implements TestDataService {
 		return null;
 	}
 
-	public ProcessorJdbc getProcessorJdbc(int id) {
+	public ProcessorJdbc getProcessorJdbc(int id,String type) {
 		List<ProcessorJdbc> list=jdbcProcess.list();
 		for (ProcessorJdbc processor : list) {
-			if(processor.getCaseId().equals(id)) {}
+			if(processor.getCaseId().equals(id)&&
+					processor.getProcessorType().equals(type)) {}
 				return processor;
 		}
 		return null;
@@ -108,5 +117,11 @@ public class TestDataServiceImpl implements TestDataService {
 				return mock;
 		}
 		return null;
+	}
+	public Beanshell getBeanshell(int caseID) {
+		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
+		queryWrapper.eq("CASE_ID", caseID);
+		return beanshell.getOne(queryWrapper);
+		
 	}
 }

@@ -1,7 +1,9 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
 
+import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.Beanshell;
 import com.autotest.data.mode.ProcessorJdbc;
 import com.autotest.data.mode.ProjectManage;
 import com.autotest.data.mode.SyetemDb;
@@ -46,6 +48,7 @@ import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
+import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jmeter.extractor.BeanShellPostProcessor;
@@ -104,9 +107,10 @@ public class TestPlanCreator {
         for (ApiTestcase api : listcase) {
         	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
         	ListedHashTree testApiTree = new ListedHashTree(sampler);
+        	
 //        	if(api.getApiPre().equals("1")) {}
         	if(api.getTcPost().equals("3")) {
-        		ProcessorJdbc pre=testData.getProcessorJdbc(1);        		
+        		ProcessorJdbc pre=testData.getProcessorJdbc(1,api.getTcPost());        		
         		testApiTree.add(sampler,PostProcessors.jdbcPostProcessor(pre));
         		testApiTree.add(sampler,PreProcessors.jdbcPreProcessor(pre));        		
         	}
@@ -122,6 +126,9 @@ public class TestPlanCreator {
         //----------------------------------------------------------------------------
 
        
+        
+        
+        
 
         log.info("添加http请求头管理器");
  
@@ -135,7 +142,43 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan, threadGroupHashTree);
         return testPlanTree;
     }
-
+    public ListedHashTree preTree(ApiTestcase api) {
+    	ListedHashTree testApiTree =new ListedHashTree();
+    	if(api.getApiPre().contains("1")) {
+    		ApiTestcase parent=testData.getTestcaseByID(api.getPreCases());
+    		if(parent.getApiPre().length()>0)preTree(parent);
+    		Map<String, String> headers=new HashMap();
+    		TechstarHTTPSamplerProxy preSampler=HTTPSampler.crtHTTPSampler(parent,headers);
+    		ListedHashTree parentTree = new ListedHashTree(preSampler);
+    		
+//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
+//    		testApiTree = new ListedHashTree(sampler);
+    	}
+    	if(api.getApiPre().contains("2")) {
+    		Beanshell shell=testData.getBeanshell(api.getCaseId());
+    		BeanShellPreProcessor prebeanshell=PreProcessors.beanShellPreProcessor(shell.getScript());
+//    		Map<String, String> headers=new HashMap();
+//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
+//    		testApiTree = new ListedHashTree(sampler);
+//    		testApiTree.add(sampler,prebeanshell);  
+    	}
+    	if(api.getApiPre().contains("3")) {
+    		ProcessorJdbc prejdbc=testData.getProcessorJdbc(api.getCaseId(),"1");
+    		JDBCPreProcessor prejdbcpro=PreProcessors.jdbcPreProcessor(prejdbc);
+//    		Map<String, String> headers=new HashMap();
+//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
+//    		testApiTree = new ListedHashTree(sampler);
+//    		testApiTree.add(sampler,prejdbcpro);  
+    	}
+    	if(api.getApiPre().contains("4")) {
+    		ApiMock dummy=testData.getApiMock(api.getCaseId());
+    		ListedHashTree mockTree=HTTPSampler.mockSampler(dummy);
+//    		Map<String, String> headers=new HashMap();
+//    		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,headers);
+//    		testApiTree = new ListedHashTree(sampler); 
+    	}
+    	return testApiTree;
+    }
     /**
      * 创建用户自定义变量
      */
