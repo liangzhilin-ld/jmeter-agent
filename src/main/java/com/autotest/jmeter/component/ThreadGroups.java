@@ -4,7 +4,7 @@ import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.gui.ThreadGroupGui;
 
 import com.autotest.data.mode.TheadGroupConfig;
-import com.autotest.jmeter.entity.theadgroup.TheadGroupEntity;
+//import com.autotest.jmeter.entity.theadgroup.TheadGroupEntity;
 
 import org.apache.jmeter.threads.ThreadGroup;
 public class ThreadGroups {

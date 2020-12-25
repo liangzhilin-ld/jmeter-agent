@@ -2,9 +2,11 @@ package com.autotest.jmeter.jmeteragent.service;
 
 import java.net.URISyntaxException;
 
+import com.autotest.data.mode.TestScheduled;
+
 public interface TestPlanService {
 	//启动测试计划
-	public void startTestPlan(String jsonString) throws URISyntaxException;
+	public void startTestPlan(TestScheduled trig) throws URISyntaxException;
 	
 	//停止测试计划
 	public void stopTestPlan();

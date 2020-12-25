@@ -236,7 +236,7 @@ public class HTTPSampler {
     	mock.setProperty("WAITING",true);
     	mock.setProperty("REQUEST_DATA",mockData.getRequestData());
     	mock.setProperty("RESPONSE_DATA",mockData.getResponseData());   	
-    	mock.setProperty("RESULT_CLASS","org.apache.jmeter.samplers.SampleResult");
+    	mock.setProperty("RESULT_CLASS","org.apache.jmeter.protocol.http.sampler.HTTPSampleResult");
         /*
          * RESULT_CLASS类有有以下三种方式
          * org.apache.jmeter.samplers.SampleResult

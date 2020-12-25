@@ -31,7 +31,10 @@ import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jorphan.collections.SearchByClass;
 
+import com.autotest.data.mode.ApiHeader;
+import com.autotest.data.mode.ProjectManage;
 import com.autotest.data.mode.SyetemDb;
+import com.autotest.data.mode.UserDefinedVariable;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -80,7 +83,18 @@ public class ConfigElement {
 //        }
         return headerManager;
     }
-    
+    public static HeaderManager createHeaderManager(List<ApiHeader> headers) {
+    	HeaderManager headerManager = new HeaderManager();
+        headerManager.setProperty(TestElement.GUI_CLASS, HeaderPanel.class.getName());
+        headerManager.setProperty(TestElement.NAME, "HTTP HeaderManager");
+        headerManager.setProperty(TestElement.COMMENTS, "Created from cURL on "+LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        boolean hasAcceptEncoding = false;
+        for (ApiHeader apiHeader : headers) {
+        	hasAcceptEncoding = hasAcceptEncoding || apiHeader.getKey().equalsIgnoreCase("Accept-Encoding");
+        	headerManager.getHeaders().addItem(new Header(apiHeader.getKey(), apiHeader.getValue()));
+		}
+        return headerManager;
+    }
 	  /**
      * User Defined Variables
      *
@@ -113,7 +127,31 @@ public class ConfigElement {
        
         return args;
     }
-    
+    public static Arguments createArguments2(List<UserDefinedVariable> listUserdv) {
+    	List<String[]> definedVars = new ArrayList<>();
+    	for (UserDefinedVariable userDefine : listUserdv) {
+ 		   String[] record= {userDefine.getName(),userDefine.getValue(),userDefine.getDesc()};
+ 		   definedVars.add(record);
+ 	   	}
+    	Arguments args = new Arguments();
+    	args.setEnabled(true);
+    	args.setName("用户定义的变量");
+    	args.setProperty(TestElement.GUI_CLASS,ArgumentsPanel.class.getName());
+    	args.setProperty(TestElement.TEST_CLASS,Arguments.class.getName());
+    	for (String[] clipboardCols : definedVars) {
+    		Argument arg2=new Argument();
+    		arg2.setMetaData("=");
+        	arg2.setName(clipboardCols[0]);
+        	   if (clipboardCols.length > 1) {
+        		   arg2.setValue(clipboardCols[1]);
+                   if (clipboardCols.length > 2) {
+                	   arg2.setDescription(clipboardCols[2]);
+                   }
+               }        	      
+        	args.addArgument(arg2);
+		}
+        return args;
+    }
 	  /**
      * HTTP缓存管理器
      *

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import com.autotest.data.mapper.TheadGroupConfigMapper;
 import com.autotest.data.mode.ApiHeader;
 import com.autotest.data.mode.ApiSwagger;
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.TestScheduled;
 import com.autotest.data.mode.TheadGroupConfig;
 import com.autotest.data.mode.UserDefinedVariable;
 //import com.techstar.dmp.jmeteragent.bean.Response;
@@ -108,14 +110,14 @@ public class TestPlanController {
 	 * 启动测试计划
 	 */
 	@ApiOperation(value = "执行测试")
-	@RequestMapping(value = "/startTest", method = RequestMethod.GET)
-	public String startPlan() {
+	@RequestMapping(value = "/startTest", method = RequestMethod.POST)
+	public String startPlan(@RequestBody TestScheduled job) {
 		String jsonstr = "{\"duration\":1,\"host\":\"http://172.16.206.128:8888/service\",\"httpTimeout\":3000,\"testCaseQuantity\":2,\"testCases\":[{\"assertion\":{\"paths\":[],\"validationType\":\"jsonpath\"},\"method\":\"POST\",\"requestBody\":\"{\\\"query\\\":{\\\"id\\\":\\\"${mock_uuid()}\\\"},\\\"pageSize\\\":\\\"10\\\",\\\"pageNum\\\":\\\"1\\\",\\\"order\\\":[{\\\"field\\\":\\\"id\\\",\\\"table\\\":\\\"ecJobsDicType\\\",\\\"order\\\":\\\"asc\\\"}]}\",\"testCaseId\":\"a6a3a43de25b400f88c89b19d38a072a\",\"url\":\"/dcp-ec-ecJobsDicType-service/queryecJobsDicType\"},{\"assertion\":{\"paths\":[],\"validationType\":\"jsonpath\"},\"method\":\"POST\",\"requestBody\":\"{\\\"query\\\":{\\\"id\\\":\\\"${mock_uuid()}\\\"},\\\"pageSize\\\":\\\"10\\\",\\\"pageNum\\\":\\\"1\\\",\\\"order\\\":[{\\\"field\\\":\\\"id\\\",\\\"table\\\":\\\"ecOrganvarianceHistory\\\",\\\"order\\\":\\\"asc\\\"}]}\",\"testCaseId\":\"96fa020bba3c449eb6574b803e3d8b35\",\"url\":\"/dcp-ec-ecOrganvarianceHistory-service/queryecOrganvarianceHistory\"}],\"testRecordId\":\"c85d838c-33e9-4ec1-8428-e0c9fe456618\",\"threadNum\":100}";
 		System.out.println("接收到测试请求：");
 		System.out.println(jsonstr);
 		log.info("启动测试");
 		try {
-			testPlanService.startTestPlan(jsonstr);
+			testPlanService.startTestPlan(job);
 			System.out.println(jsonstr);
 		} catch (Exception ex) {
 			ex.printStackTrace();

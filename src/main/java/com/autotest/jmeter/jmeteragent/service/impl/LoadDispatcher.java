@@ -1812,6 +1812,8 @@ public class LoadDispatcher implements JMeterPlugin {
         String random = String.valueOf(System.currentTimeMillis() / 1000);
         String reportName = logPath.concat(random).concat("report.jtl");
         String htlmPath = logPath.concat(random).concat("html");
+//        String reportName = logPath.concat("report.jtl");
+//        String htlmPath = logPath.concat("html");
         //String[] args1 = new String[]{"-n", "-e", "-o".concat(htlmPath), "-l".concat(reportName)};//,"-r"
         String[] args1 = new String[]{"-n", "-e", "-o",htlmPath, "-l",reportName};      
         JMeterUtils.loadJMeterProperties(jmeterHome.concat(File.separator).concat(jmeterPropertiesFileName));

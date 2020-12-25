@@ -6,14 +6,14 @@ package com.autotest.jmeter.jmeteragent.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import com.autotest.data.mode.*;
 import com.autotest.data.service.impl.*;
 import com.autotest.jmeter.jmeteragent.service.TestDataService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.util.StrUtil;
 
 /**
  * @author Techstar
@@ -29,12 +29,12 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired TestScheduledServiceImpl testSchedule;
 	private @Autowired ApiReportServiceImpl apiReport;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
-	private @Autowired  ProjectManageServiceImpl projectManage;
-	private @Autowired  ProcessorJdbcServiceImpl jdbcProcess;
-	private @Autowired  SyetemDbServiceImpl sysDb;
-	private @Autowired  ApiMockServiceImpl mockData;
-	private @Autowired  BeanshellServiceImpl beanshell;
-	
+	private @Autowired ProjectManageServiceImpl projectManage;
+	private @Autowired ProcessorJdbcServiceImpl jdbcProcess;
+	private @Autowired SyetemDbServiceImpl sysDb;
+	private @Autowired ApiMockServiceImpl mockData;
+	private @Autowired BeanshellServiceImpl beanshell;
+	private @Autowired TestScheduledServiceImpl jsobService;
 	private List<ApiHeader> headers;
 
 	@Override
@@ -61,6 +61,7 @@ public class TestDataServiceImpl implements TestDataService {
 		}
 		return headerMap;
 	}
+	
 	public List<SyetemDictionary> getSyetemDic() {
 		return syetemDic.list();
 	}
@@ -73,6 +74,11 @@ public class TestDataServiceImpl implements TestDataService {
 	public List<TheadGroupConfig> getTheadGroupConfig() {
 		return theadGroupConfig.list();
 	}
+	/**
+	 * 根据用例ID查询用例
+	 * @param id
+	 * @return
+	 */
 	public ApiTestcase getTestcaseByID(String id) {
 		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.eq("CASE_ID", Integer.valueOf(id));
@@ -81,9 +87,31 @@ public class TestDataServiceImpl implements TestDataService {
 	public List<ApiTestcase> getTestcase() {
 		return apiTestcase.list();
 	}
-	public List<UserDefinedVariable> getUserDefinedVar() {
-		return userDefinedVar.list();
+	
+	/**
+	 * 根据用例ID集合查询用例
+	 * @param trig 任务
+	 * @return
+	 */
+	public List<ApiTestcase> getTestcaseByIds(TestScheduled trig) {
+		if(StrUtil.isEmpty(trig.getTcCaseids()))
+			return getTestcase();
+		List<String> idList=ListUtil.of(trig.getTcCaseids().split(","));
+		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().in(ApiTestcase::getCaseId, idList);
+		return apiTestcase.list(queryWrapper);
 	}
+	/**
+	 * 查询用户自定义变量
+	 * @param projectID 项目编号
+	 * @return
+	 */
+	public List<UserDefinedVariable> getUserDefinedVar(int projectID) {
+		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(UserDefinedVariable::getProjectId, projectID);
+		return userDefinedVar.list(queryWrapper);
+	}
+	
 	public ProjectManage getPoject(String projetID) {
 		List<ProjectManage> list=projectManage.list();
 		for (ProjectManage projectManage : list) {
@@ -109,6 +137,10 @@ public class TestDataServiceImpl implements TestDataService {
 				return dbinfo;
 		}
 		return null;
+	}
+	public List<SyetemDb> getSyetemDbAll() {
+		List<SyetemDb> list=sysDb.list();
+		return list;
 	}
 	public ApiMock getApiMock(int caseID) {
 		List<ApiMock> list=mockData.list();
