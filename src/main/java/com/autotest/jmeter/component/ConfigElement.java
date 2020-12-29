@@ -89,6 +89,8 @@ public class ConfigElement {
         headerManager.setProperty(TestElement.NAME, "HTTP HeaderManager");
         headerManager.setProperty(TestElement.COMMENTS, "Created from cURL on "+LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         boolean hasAcceptEncoding = false;
+        if(headers.size()==0)
+    		return headerManager;
         for (ApiHeader apiHeader : headers) {
         	hasAcceptEncoding = hasAcceptEncoding || apiHeader.getKey().equalsIgnoreCase("Accept-Encoding");
         	headerManager.getHeaders().addItem(new Header(apiHeader.getKey(), apiHeader.getValue()));

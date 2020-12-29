@@ -87,17 +87,7 @@ public class HTTPSampler {
             httpSampler.addNonEncodedArgument("",testApi.getParameters(),"");            
         }else {
         	//表单数据参数提交
-        	AddArgumentFromClipboard(httpSampler,testApi.getParameters());
-//        	if(StrUtil.isNotEmpty(testApi.getParameters())) {
-//        		JSONObject jsonOb=JSONUtil.parseObj(testApi.getParameters());
-//        		if(!jsonOb.isEmpty()) {
-//            		for (Entry<String, Object> para : jsonOb.entrySet()) {
-//            			String getValue=StrUtil.isEmptyIfStr(para.getValue())?"":para.getValue().toString();
-//            			httpSampler.addArgument(para.getKey(), getValue);
-//            			//httpSampler.getArguments().addArgument(AddArgumentFromClipboard(para.getKey(), getValue));            			
-//    				}
-//        		}		
-//        	}                        
+        	AddArgumentFromClipboard(httpSampler,testApi.getParameters());                        
         }
         return httpSampler;
     }

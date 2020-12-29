@@ -75,7 +75,7 @@ public class Swagger2Config {
     }
 
     private ApiInfo apiInfo() {
-        return new ApiInfoBuilder().title("自动化测试平台接口")
+        return new ApiInfoBuilder().title("Jmeter-agent服务")
         		.description("接口API")
 //        		.termsOfServiceUrl("https://github.com/")
 //        		.contact(new Contact("Java Team", "https://github.com/", "1111@qq.com"))

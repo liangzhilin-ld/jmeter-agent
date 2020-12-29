@@ -34,7 +34,9 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired SyetemDbServiceImpl sysDb;
 	private @Autowired ApiMockServiceImpl mockData;
 	private @Autowired BeanshellServiceImpl beanshell;
-	private @Autowired TestScheduledServiceImpl jsobService;
+	private @Autowired ProcessorJsonServiceImpl jsonServer;
+	private @Autowired AssertJsonServiceImpl assertJson;
+	private @Autowired AssertResponseServiceImpl assertRes;
 	private List<ApiHeader> headers;
 
 	@Override
@@ -150,10 +152,70 @@ public class TestDataServiceImpl implements TestDataService {
 		}
 		return null;
 	}
-	public Beanshell getBeanshell(int caseID) {
+//	public Beanshell getBeanshell(int caseID) {
+//		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
+//		queryWrapper.eq("CASE_ID", caseID);
+//		return beanshell.getOne(queryWrapper);
+//		
+//	}
+	public List<Beanshell> getPreBeanshell(int caseID) {
 		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
-		queryWrapper.eq("CASE_ID", caseID);
-		return beanshell.getOne(queryWrapper);
+		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
+		.eq(Beanshell::getBeanshellType,"2");
+		return beanshell.list(queryWrapper);
 		
 	}
+	public List<Beanshell> getPostBeanshell(int caseID) {
+		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
+		.eq(Beanshell::getBeanshellType,"8");
+		return beanshell.list(queryWrapper);
+		
+	}
+	public List<Beanshell> getAssertBeanshell(int caseID) {
+		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
+		.eq(Beanshell::getBeanshellType,"11");
+		return beanshell.list(queryWrapper);
+		
+	}
+	public List<ProcessorJdbc> getPreJdbc(int caseID) {
+		QueryWrapper<ProcessorJdbc> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ProcessorJdbc::getCaseId, caseID)
+		.eq(ProcessorJdbc::getProcessorType,"3");
+		return jdbcProcess.list(queryWrapper);
+		
+	}
+	public List<ProcessorJdbc> getPostJdbc(int caseID) {
+		QueryWrapper<ProcessorJdbc> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ProcessorJdbc::getCaseId, caseID)
+		.eq(ProcessorJdbc::getProcessorType,"9");
+		return jdbcProcess.list(queryWrapper);
+		
+	}
+	public List<ApiMock> getPreMock(int caseID) {
+		QueryWrapper<ApiMock> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ApiMock::getCaseId, caseID);
+		return mockData.list(queryWrapper);
+		
+	}
+	public List<ProcessorJson> getPostJson(int caseID) {
+		QueryWrapper<ProcessorJson> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ProcessorJson::getCaseId, caseID);
+		return jsonServer.list(queryWrapper);
+		
+	}
+	public List<AssertJson> getAssertJson(int caseID) {
+		QueryWrapper<AssertJson> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(AssertJson::getCaseId, caseID);
+		return assertJson.list(queryWrapper);
+		
+	}
+	public List<AssertResponse> getResponse(int caseID) {
+		QueryWrapper<AssertResponse> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(AssertResponse::getCaseId, caseID);
+		return assertRes.list(queryWrapper);
+		
+	}
+	
 }
