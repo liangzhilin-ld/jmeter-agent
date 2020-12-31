@@ -14,6 +14,9 @@ import org.apache.jmeter.testelement.TestElement;
 import com.autotest.data.mode.AssertJson;
 import com.autotest.data.mode.AssertResponse;
 import com.autotest.jmeter.entity.assertion.*;
+
+import cn.hutool.json.JSONUtil;
+import net.sf.json.JSONArray;
 //import com.autotest.domain.jmeter.assertion.JsonPathAssert;
 //import com.autotest.domain.jmeter.assertion.ResponseAssert;
 
@@ -164,29 +167,18 @@ public class Assertions {
 		 		break;
 		 }
 		 //resAssert.setProperty(new IntegerProperty("Assertion.test_type", 2));//见schematic.xsl
-		 Arrays.asList(ra.getTestString());
-		 for (String testString : Arrays.asList(ra.getTestString())) {
-			 resAssert.addTestString(testString);	
-		 }		 
+		 if(!ra.getTestString().isEmpty()&&!JSONUtil.parseObj(ra.getTestString()).isEmpty()) {
+			 JSONUtil.parseObj(ra.getTestString())
+			 .entrySet()
+			 .forEach(item->resAssert
+					 .addTestString(item.getValue().toString()
+					 )
+			 ); 
+		 }
 		 resAssert.setCustomFailureMessage(ra.getCustomFailureMsg());
 		 return resAssert;
 	 }
-	 
-//	 public static JSONPathAssertion jsonPathAssertion(JsonAssert jsAssert) {
-//		 
-//		 JSONPathAssertion jsonAssert=new JSONPathAssertion();
-//		 jsonAssert.setProperty(TestElement.GUI_CLASS,JSONPathAssertionGui.class.getName());
-//		 jsonAssert.setProperty(TestElement.TEST_CLASS,JSONPathAssertion.class.getName());
-//		 jsonAssert.setEnabled(true);
-//		 jsonAssert.setName("JSON断言");//名称
-//		 jsonAssert.setJsonPath(jsAssert.getJsonPath());		 
-//		 jsonAssert.setJsonValidationBool(jsAssert.isAddAssertValue());//默认true为false只校验json路径是否存在
-//		 jsonAssert.setIsRegex(true);		 
-//		 jsonAssert.setExpectedValue(jsAssert.getExpectedValue()); 
-//		 jsonAssert.setExpectNull(jsAssert.isExpectNull());//默认false,期望值为null
-//		 jsonAssert.setInvert(jsAssert.isInvertAssert());	//默认false,校验结果反转
-//		 return jsonAssert;
-//	 }
+
 	 public static JSONPathAssertion jsonPathAssertion(AssertJson jsAssert) {
 		 
 		 JSONPathAssertion jsonAssert=new JSONPathAssertion();

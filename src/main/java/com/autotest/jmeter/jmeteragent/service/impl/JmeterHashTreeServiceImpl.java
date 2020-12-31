@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
+import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
 import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jorphan.collections.ListedHashTree;
@@ -38,7 +39,6 @@ public class JmeterHashTreeServiceImpl {
 	private @Autowired TestDataServiceImpl testDadaService;
 	private @Autowired UserDefinedVariableServiceImpl userDefinedVar;
 	private @Autowired ApiHeaderServiceImpl apiHeader;
-	private @Autowired JmeterHashTreeServiceImpl jmeterCompant;
 	private Map<String, String> header=new HashMap();
 	
 //	private void createConfig(TestScheduled trig) {
@@ -84,7 +84,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param trig
 	 * @return
 	 */
-	public void addArguments(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addArguments(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
 		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, api.getCaseId())
 							 .eq(UserDefinedVariable::getType, "1");
@@ -116,7 +116,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler   TechstarHTTPSamplerProxy对象
 	 * @param api 用例
 	 */
-	public void addHeader(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addHeader(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
 //		ApiTestcase testcase = testDadaService.getTestcaseByID(String.valueOf(caseId));
 		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ApiHeader::getProjectId, api.getProjectId())
@@ -135,7 +135,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param threadGroup
 	 * @param api
 	 */
-	public void addMockSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
+	private void addMockSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
 		List<ApiMock> preMock=testDadaService.getPreMock(api.getCaseId());
 		if (preMock.size()>0) {
 			for (ApiMock apiMock : preMock) {
@@ -152,10 +152,8 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	public void addPreProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
-		if(StrUtil.isNotEmpty(api.getPreCases())) {
-			ApiTestcase parent=testDadaService.getTestcaseByID(api.getPreCases());
-		}
+	private void addPreProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+		
 		List<Beanshell> shell=testDadaService.getPreBeanshell(api.getCaseId());
 		if (shell.size()>0)
 			shell.forEach(item->testApiTree.add(sampler,PreProcessors.beanShellPreProcessor(item.getScript())));
@@ -170,7 +168,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	public void addPostProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addPostProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
 		List<Beanshell> shell=testDadaService.getPostBeanshell(api.getCaseId());
 		if (shell.size()>0)
 			shell.forEach(item->testApiTree.add(sampler,PostProcessors.beanShellPostProcessor(item.getScript())));
@@ -188,7 +186,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	public void addAssertions(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addAssertions(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
 		List<AssertJson> assertJsonList=testDadaService.getAssertJson(api.getCaseId());
 		if (assertJsonList.size()>0)
 			assertJsonList.forEach(item->testApiTree.add(sampler,Assertions.jsonPathAssertion(item)));
@@ -202,7 +200,20 @@ public class JmeterHashTreeServiceImpl {
 			assertResList.forEach(item->testApiTree.add(sampler,Assertions.responseAssertion(item)));
 		
 	}
-
+	
+	/**
+	 * 前置用例
+	 * @param threadGroupHashTree
+	 * @param threadGroup
+	 * @param api
+	 */
+	private void addParentSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
+		if(StrUtil.isNotEmpty(api.getPreCases())) {
+			ApiTestcase parent=testDadaService.getTestcaseByID(api.getPreCases());
+			addSamplers(threadGroupHashTree,threadGroup,parent);
+		}
+		
+	}
 	/**
 	 * 用例实例化
 	 * @param threadGroupHashTree
@@ -215,30 +226,33 @@ public class JmeterHashTreeServiceImpl {
     	ListedHashTree testApiTree = new ListedHashTree(sampler);
     	//header,用户自定义变量，前置，后置，断言查询并解析
     	log.info("header添加");
-    	jmeterCompant.addHeader(testApiTree, sampler, api); 
+    	this.addHeader(testApiTree, sampler, api); 
     	log.info("用户自定义变量");
-    	jmeterCompant.addArguments(testApiTree, sampler, api);
+    	this.addArguments(testApiTree, sampler, api);
     	//jmeterCompant.addPreProcessors(testApiTree, sampler, api);
     	log.info("前置添加");
-		if(StrUtil.isNotEmpty(api.getPreCases())) {
-			ApiTestcase parent=testDadaService.getTestcaseByID(api.getPreCases());
-			addSamplers(threadGroupHashTree,threadGroup,parent);
-		}
-		List<Beanshell> shell=testDadaService.getPreBeanshell(api.getCaseId());
-		if (shell.size()>0)
-			shell.forEach(item->testApiTree.add(sampler,PreProcessors.beanShellPreProcessor(item.getScript())));
-		
-		List<ProcessorJdbc> preJdbc=testDadaService.getPreJdbc(api.getCaseId());
-		if (preJdbc.size()>0)
-			preJdbc.forEach(item->testApiTree.add(sampler,PreProcessors.jdbcPreProcessor(item)));
-		
-    	jmeterCompant.addMockSampler(threadGroupHashTree, threadGroup, api);
+    	this.addParentSampler(threadGroupHashTree,threadGroup,api);
+    	this.addPreProcessors(testApiTree,sampler,api);
+    	this.addMockSampler(threadGroupHashTree, threadGroup, api);
     	log.info("后置添加");
-    	jmeterCompant.addPostProcessors(testApiTree, sampler, api);
+    	this.addPostProcessors(testApiTree, sampler, api);
     	log.info("断言设置");
-    	jmeterCompant.addAssertions(testApiTree, sampler, api);
+    	this.addAssertions(testApiTree, sampler, api);
     	threadGroupHashTree.add(threadGroup, testApiTree);
 		
 	}
 	
+	public void writeSamplers(HTTPSampleResult result) {
+		ApiReport rport=new ApiReport();
+		rport.setTcRequest(result.getSamplerData());
+		rport.setTcResponse(result.getResponseDataAsString());
+		result.getConnectTime();
+		result.getQueryString();
+		result.getRequestHeaders();
+		result.getResponseMessage();
+		result.getAssertionResults();
+		result.getSampleLabel();
+		result.getUrlAsString();
+		
+	}
 }

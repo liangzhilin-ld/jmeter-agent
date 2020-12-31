@@ -81,7 +81,7 @@ public class HTTPSampler {
         httpSampler.setFollowRedirects(true);
         httpSampler.setUseKeepAlive(true);
         httpSampler.setDoMultipart(false);
-        httpSampler.setHeaderManager(headerManager);  
+        httpSampler.setHeaderManager(headerManager);
         if(testApi.getApiIn().equals("body")) {
         	httpSampler.setPostBodyRaw(true);    
             httpSampler.addNonEncodedArgument("",testApi.getParameters(),"");            
@@ -235,6 +235,7 @@ public class HTTPSampler {
          * 
          */
     	ListedHashTree mockSamplerTree = new ListedHashTree(mock);
+    	mockSamplerTree.add(mock, PostProcessors.beanShellPostProcessor("prev.setIgnore();"));
     	return mockSamplerTree;
     }
     

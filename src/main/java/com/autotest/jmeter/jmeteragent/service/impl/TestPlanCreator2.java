@@ -107,78 +107,10 @@ public class TestPlanCreator2 {
         threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
         log.info("添加接口数据");
         List<ApiTestcase>  listcase=testData.getTestcaseByIds(trig);
-        //listcase.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
-        for (ApiTestcase api : listcase) {
-        	jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, api);
-        }
-//        Map<String, String> header=new HashMap();
-//        for (ApiTestcase api : listcase) {
-//        	log.info("创建http sampler");
-//        	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
-//        	ListedHashTree testApiTree = new ListedHashTree(sampler);
-//        	//header,用户自定义变量，前置，后置，断言查询并解析
-//        	log.info("添加http请求头管理器");
-//        	jmeterCompant.addHeader(testApiTree, sampler, api);  
-//        	log.info("添加用户自定义变量");
-//        	jmeterCompant.addArguments(testApiTree, sampler, api);
-//        	log.info("创建前置处理");
-//        	
-//        	
-//        	jmeterCompant.addPreProcessors(testApiTree, sampler, api);
-//        	
-//        	jmeterCompant.addMockSampler(threadGroupHashTree, threadGroup, api);
-//        	log.info("创建后置处理");
-//        	jmeterCompant.addPostProcessors(testApiTree, sampler, api);
-//        	log.info("设置断言");
-//        	jmeterCompant.addAssertions(testApiTree, sampler, api);
-//        	
-////        	if(!api.getAttachment().isEmpty()) {}
-//        	threadGroupHashTree.add(threadGroup, testApiTree);
-//		}
-//        threadGroupHashTree.add(threadGroup,HTTPSampler.mockSampler(testData.getApiMock(1)));
-        //----------------------------------------------------------------------------
+        listcase.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
         testPlanTree.add(testPlan, threadGroupHashTree);
         return testPlanTree;
     }
- 
-    /**
-     * 前置处理器添加
-     * @param threadGroupHashTree  线程组树
-     * @param threadGroup  线程组对象
-     * @param api  被测接口
-     */
-//    public void preProcessAdd(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
-//    	Map<String, String> header=new HashMap();
-//    	TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
-//		ListedHashTree testApiTree = new ListedHashTree(sampler);
-//		
-//    	if(api.getApiPre().contains("1")) {
-//    		ApiTestcase parent=testData.getTestcaseByID(api.getPreCases());
-//    		if(parent.getApiPre().length()>0)
-//    			preProcessAdd(threadGroupHashTree,threadGroup,parent); 
-//    		Map<String, String> headers=new HashMap();
-//    		TechstarHTTPSamplerProxy preSampler=HTTPSampler.crtHTTPSampler(parent,headers);
-//    		ListedHashTree parentTree = new ListedHashTree(preSampler);
-//    		threadGroupHashTree.add(threadGroup, parentTree);
-//    	}
-//    	if(api.getApiPre().contains("2")) {
-//    		Beanshell shell=testData.getPreBeanshell(api.getCaseId());
-//    		BeanShellPreProcessor prebeanshell=PreProcessors.beanShellPreProcessor(shell.getScript());    		
-//    		testApiTree.add(sampler,prebeanshell);
-//    	}
-//    	if(api.getApiPre().contains("3")) {
-//    		ProcessorJdbc prejdbc=testData.getProcessorJdbc(api.getCaseId(),"1");
-//    		JDBCPreProcessor prejdbcpro=PreProcessors.jdbcPreProcessor(prejdbc);
-//    		testApiTree.add(sampler,prejdbcpro);  
-//    	}
-//    	if(api.getApiPre().contains("4")) {
-//    		ApiMock dummy=testData.getApiMock(api.getCaseId());
-//    		ListedHashTree mockTree=HTTPSampler.mockSampler(dummy);
-//    		threadGroupHashTree.add(threadGroup, mockTree);
-//    	}
-//		threadGroupHashTree.add(threadGroup, testApiTree);
-//    }
-  
 
     /**
      * 创建线程组
@@ -214,77 +146,7 @@ public class TestPlanCreator2 {
         loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
         loopController.initialize();
         return loopController;
-    }
-
-    /**
-     * 创建http采样器
-     *
-     * @return
-     */
-    public TechstarHTTPSamplerProxy createHTTPSamplerProxy(HeaderManager headerManager) {
-        TechstarHTTPSamplerProxy httpSamplerProxy = new TechstarHTTPSamplerProxy();
-        httpSamplerProxy.setHeaderManager(headerManager);
-        httpSamplerProxy.setName("a6a3a43de25b400f88c89b19d38a072a");
-        //httpSamplerProxy.setDomain("172.16.206.128");
-        //httpSamplerProxy.setPort(8888);
-        httpSamplerProxy.setPath("/dcp-ec-ecJobsDicType-service/queryecJobsDicType");
-        httpSamplerProxy.setMethod("POST");
-        httpSamplerProxy.setConnectTimeout("3000");
-        httpSamplerProxy.setUseKeepAlive(true);
-        httpSamplerProxy.setProperty(TestElement.TEST_CLASS, TechstarHTTPSamplerProxy.class.getName());
-        httpSamplerProxy.setProperty(TestElement.GUI_CLASS, HttpTestSampleGui.class.getName());
-        httpSamplerProxy.setProtocol("http");
-//        CacheManager cacheManager=new CacheManager();
-//        httpSamplerProxy.setCacheManager(cacheManager);
-        httpSamplerProxy.setEnabled(true);
-        httpSamplerProxy.addNonEncodedArgument("", "${param}", "=");
-        return httpSamplerProxy;
-    }
-
-    /**
-     * 创建beanshell前置处理器
-     */
-    public static BeanShellPreProcessor createBeanShellPreProcessor() {
-        BeanShellPreProcessor beanShellPreProcessor = new BeanShellPreProcessor();
-        String script = String.format("import java.util.UUID;\r\n" +
-                "\r\n" +
-                "public String mock_uuid(){\r\n" +
-                "	return UUID.randomUUID().toString().replaceAll(\"-\",\"\");\r\n" +
-                "}\r\n" +
-                "vars.put(\"param\", \"%s\");", "test");
-        beanShellPreProcessor.setScript(script);
-        beanShellPreProcessor.setProperty("script", script);
-        return beanShellPreProcessor;
-    }
-
-    /**
-     * 创建beanshell后置处理器
-     */
-    public static BeanShellPostProcessor createBeanShellPostProcessor() {
-        BeanShellPostProcessor beanShellPostProcessor = new BeanShellPostProcessor();
-        String s = "import java.io.*;\r\n" +
-                "import redis.clients.jedis.Jedis;\r\n" +
-                "\r\n" +
-                "Jedis jedis = new Jedis(\"localhost\",6379);\r\n" +
-                "String response=\"\";\r\n" +
-                "String Str = \"{\\\"status\\\":200\";\r\n" +
-                "response = prev.getResponseDataAsString();\r\n" +
-                "if(response==\"\"){\r\n" +
-                "	Failure = true;\r\n" +
-                "	FailureMessage=\"系统无响应，获取不到响应数据！\";\r\n" +
-                "	log.info(FailureMessage);\r\n" +
-                "}else if(response.contains(Str)==false){\r\n" +
-                "	Failure=true;\r\n" +
-                "	String Msg =\"响应结果与期望不一致，请排查性能问题，还是程序代码问题\";\r\n" +
-                "	FailureMessage = Msg + \"期望结果:\" + Str+\",\" + \"响应内容:\"+ response;\r\n" +
-                "	jedis.zadd(\"errorLog\", 0, FailureMessage);\r\n" +
-                "}";
-        beanShellPostProcessor.setScript(s);
-        beanShellPostProcessor.setProperty("script", s);
-        return beanShellPostProcessor;
-    }
-
-    
+    }  
 	/**
 	 * 用户自定义变量
 	 * @return
