@@ -35,7 +35,7 @@ import cn.hutool.core.bean.BeanUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
-@Api(tags = "TestPlan操作")
+@Api(tags = "TestPlan操作接口")
 @RestController
 public class TestPlanController {
 	private static final Logger log = LoggerFactory.getLogger(TestPlanServiceImpl.class);
@@ -91,25 +91,26 @@ public class TestPlanController {
 //        return response;
 //    }
 //
-//    /**
-//     * 停止测试
-//     */
-//    @RequestMapping(value = "/stopTestPlan", method = RequestMethod.GET)
-//    public Response<Map<String, Object>> stopTestPlan() {
-//        log.info("停止测试");
-//        testPlanService.stopTestPlan();
-//        Response<Map<String, Object>> response = new Response<>();
-//        Map<String, Object> data = new HashMap<>();
-//        data.put("taskId", "demo");
-//        data.put("detail", "停止任务执行！");
+    /**
+     * 停止测试
+     */
+	@ApiOperation(value = "停止测试")
+    @RequestMapping(value = "/stopTestPlan", method = RequestMethod.GET)
+    public Map<String, Object> stopTestPlan() {
+        testPlanService.stopTestPlan();
+        //Response<Map<String, Object>> response = new Response<>();
+        //Map<String, Object> response=new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("taskId", "demo");
+        data.put("detail", "停止任务执行！");
 //        response.setData(data);
-//        return response;
-//    }
+        return data;
+    }
 
 	/**
 	 * 启动测试计划
 	 */
-	@ApiOperation(value = "执行测试")
+	@ApiOperation(value = "开始测试")
 	@RequestMapping(value = "/startTest", method = RequestMethod.POST)
 	public String startPlan(@RequestBody TestScheduled job) {
 		//String jsonstr = "{\"duration\":1,\"host\":\"http://172.16.206.128:8888/service\",\"httpTimeout\":3000,\"testCaseQuantity\":2,\"testCases\":[{\"assertion\":{\"paths\":[],\"validationType\":\"jsonpath\"},\"method\":\"POST\",\"requestBody\":\"{\\\"query\\\":{\\\"id\\\":\\\"${mock_uuid()}\\\"},\\\"pageSize\\\":\\\"10\\\",\\\"pageNum\\\":\\\"1\\\",\\\"order\\\":[{\\\"field\\\":\\\"id\\\",\\\"table\\\":\\\"ecJobsDicType\\\",\\\"order\\\":\\\"asc\\\"}]}\",\"testCaseId\":\"a6a3a43de25b400f88c89b19d38a072a\",\"url\":\"/dcp-ec-ecJobsDicType-service/queryecJobsDicType\"},{\"assertion\":{\"paths\":[],\"validationType\":\"jsonpath\"},\"method\":\"POST\",\"requestBody\":\"{\\\"query\\\":{\\\"id\\\":\\\"${mock_uuid()}\\\"},\\\"pageSize\\\":\\\"10\\\",\\\"pageNum\\\":\\\"1\\\",\\\"order\\\":[{\\\"field\\\":\\\"id\\\",\\\"table\\\":\\\"ecOrganvarianceHistory\\\",\\\"order\\\":\\\"asc\\\"}]}\",\"testCaseId\":\"96fa020bba3c449eb6574b803e3d8b35\",\"url\":\"/dcp-ec-ecOrganvarianceHistory-service/queryecOrganvarianceHistory\"}],\"testRecordId\":\"c85d838c-33e9-4ec1-8428-e0c9fe456618\",\"threadNum\":100}";
@@ -125,14 +126,9 @@ public class TestPlanController {
 		return new Date().toString() + "  测试完成！";
 	}
 
-	@Autowired
-	private TheadGroupConfigMapper theadGroup;
-	@Autowired
-	private ApiTestcaseMapper testcaseMapper;
-	private @Autowired ApiSwaggerMapper swaggerMapper;
-	private @Autowired SyetemDbMapper systemDbMapper;
+
+
 	private @Autowired TestDataServiceImpl testData;
-	private @Autowired ApiHeaderMapper headermapper;
 	
 	@ApiOperation(value = "数据库调试")
 	@RequestMapping(value = "/getDtest", method = RequestMethod.GET)

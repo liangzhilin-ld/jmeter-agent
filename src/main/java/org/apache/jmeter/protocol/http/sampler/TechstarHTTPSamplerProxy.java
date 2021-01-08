@@ -18,9 +18,13 @@
 package org.apache.jmeter.protocol.http.sampler;
 
 import java.net.URL;
+import java.time.LocalDateTime;
 
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.samplers.Interruptible;
+import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
+import com.autotest.util.SpringContextUtil;
+
 
 /**
  * Proxy class that dispatches to the appropriate HTTP sampler.
@@ -66,10 +70,15 @@ public final class TechstarHTTPSamplerProxy extends HTTPSamplerBase implements I
 				return errorResult(ex, new HTTPSampleResult());
 			}
 		}
+		//执行结果写入数据库
+		((JmeterHashTreeServiceImpl) SpringContextUtil
+				.getBean("jmeterHashTreeServiceImpl"))
+				.writeSamplers(impl.sample(u, method, areFollowingRedirect, depth));	
+		//调试信息
 		System.out.println("--------------请求内容---------------------------");
-		System.out.println(impl.sample(u, method, areFollowingRedirect, depth).getSamplerData());
-		System.out.println("--------------响应内容---------------------------");
-		System.out.println(impl.sample(u, method, areFollowingRedirect, depth).getResponseDataAsString());
+		//System.out.println(impl.sample(u, method, areFollowingRedirect, depth).getSamplerData());
+//		System.out.println("--------------响应内容---------------------------");
+//		System.out.println(impl.sample(u, method, areFollowingRedirect, depth).getResponseDataAsString());
 		return impl.sample(u, method, areFollowingRedirect, depth);
 	}
 

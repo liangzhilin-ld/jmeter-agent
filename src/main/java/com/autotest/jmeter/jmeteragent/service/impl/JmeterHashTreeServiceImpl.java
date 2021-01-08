@@ -1,20 +1,26 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
+
+import org.apache.jmeter.assertions.AssertionResult;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
+import org.apache.jmeter.threads.JMeterContext;
+import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.autotest.data.mapper.ApiReportMapper;
 import com.autotest.data.mode.*;
 import com.autotest.data.service.impl.ApiHeaderServiceImpl;
 import com.autotest.data.service.impl.UserDefinedVariableServiceImpl;
@@ -24,7 +30,9 @@ import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.PostProcessors;
 import com.autotest.jmeter.component.PreProcessors;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 
+import cn.hutool.core.text.StrSpliter;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.apachecommons.CommonsLog;
 
@@ -77,6 +85,8 @@ public class JmeterHashTreeServiceImpl {
         port.setMetaData("=");
         args.addArgument(host);
         args.addArgument(port);
+        args.addArgument(new Argument("JobId", trig.getId()));
+        args.addArgument(new Argument("HistoryId", trig.getHistoryId()));
 	    return args;
 	}
 	/**
@@ -222,7 +232,9 @@ public class JmeterHashTreeServiceImpl {
 	 */
 	public void addSamplers(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
 		log.info("创建http sampler");
+		//header.put("case_id", api.getCaseId().toString());//也可通过comments设置用例ID
 		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
+		sampler.setComment(api.getCaseId().toString()+"||"+api.getSuiteName());
     	ListedHashTree testApiTree = new ListedHashTree(sampler);
     	//header,用户自定义变量，前置，后置，断言查询并解析
     	log.info("header添加");
@@ -242,17 +254,41 @@ public class JmeterHashTreeServiceImpl {
 		
 	}
 	
-	public void writeSamplers(HTTPSampleResult result) {
+	public synchronized void writeSamplers(HTTPSampleResult result) {
+		
+		JMeterContext ctx=JMeterContextService.getContext();
+		String commts=ctx.getCurrentSampler().getComment();
+		if(commts.length()==0)return;
 		ApiReport rport=new ApiReport();
+		rport.setHistoryId(ctx.getVariables().get("HistoryId"));
+		rport.setJobId(ctx.getVariables().get("JobId"));
+		List<String> comments=StrSpliter.splitTrimIgnoreCase(commts,"||",2,true);
+		rport.setCaseId(Integer.parseInt(comments.get(0)));
+		rport.setTcSuite(comments.get(1));
+		rport.setTcName(result.getSampleLabel());
+		rport.setTcResult(result.isSuccessful());
+		rport.setTcDuration(String.valueOf(result.getLatency()));
+		String assertStr="";
+		rport.setTcLog("");
+		if(!result.isSuccessful()) {
+			String tcLog="Response code:"+result.getResponseCode()+"\r\n"+
+					  	 "Response message: "+result.getResponseMessage();
+			rport.setTcLog(tcLog);
+			for(AssertionResult assR:result.getAssertionResults()) {
+				if(assR.isError()||assR.isFailure()) {
+					assertStr=assertStr+"["+assR.getName()+"]"+assR.getFailureMessage()+"\r\n";
+				}	
+			}
+		}
+		rport.setTcHeader(result.getRequestHeaders());
 		rport.setTcRequest(result.getSamplerData());
 		rport.setTcResponse(result.getResponseDataAsString());
-		result.getConnectTime();
-		result.getQueryString();
-		result.getRequestHeaders();
-		result.getResponseMessage();
-		result.getAssertionResults();
-		result.getSampleLabel();
-		result.getUrlAsString();
+		rport.setTcAssert(assertStr);
+		rport.setTcRunsNum(1);
+		rport.setCreateTime(LocalDateTime.now());
+		Boolean flag=testDadaService.updateApiReport(rport);
+		if(!flag)log.error("用例ID:"+rport.getCaseId()+",名称:"+rport.getTcName()+"-----更新失败");
+		//result.getQueryString();
 		
 	}
 }

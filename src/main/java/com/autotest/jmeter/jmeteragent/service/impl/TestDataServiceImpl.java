@@ -3,15 +3,19 @@
  */
 package com.autotest.jmeter.jmeteragent.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import com.autotest.data.mode.*;
 import com.autotest.data.service.impl.*;
 import com.autotest.jmeter.jmeteragent.service.TestDataService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 
@@ -19,7 +23,7 @@ import cn.hutool.core.util.StrUtil;
  * @author Techstar
  *
  */
-@Component
+@Repository
 public class TestDataServiceImpl implements TestDataService {
 
 	private @Autowired ApiHeaderServiceImpl apiHeader;
@@ -28,6 +32,7 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired UserDefinedVariableServiceImpl userDefinedVar;
 	private @Autowired TestScheduledServiceImpl testSchedule;
 	private @Autowired ApiReportServiceImpl apiReport;
+	private @Autowired ApiReportHistoryListServiceImpl historyStat;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
 	private @Autowired ProjectManageServiceImpl projectManage;
 	private @Autowired ProcessorJdbcServiceImpl jdbcProcess;
@@ -70,12 +75,64 @@ public class TestDataServiceImpl implements TestDataService {
 	public List<TestScheduled> getTestSchedule() {
 		return testSchedule.list();
 	}
+//	public Boolean updateTestSchedule(String historyid) {
+//		
+//		return testSchedule.list();
+//	}
 	public List<ApiReport> getApiReport() {
 		return apiReport.list();
+	}
+	/**
+	 * 更新详细用例执行结果
+	 * @param report
+	 * @return
+	 */
+	public Boolean updateApiReport(ApiReport report) {
+		UpdateWrapper<ApiReport> updateWrapper = new UpdateWrapper<>();
+		updateWrapper.lambda().set(ApiReport::getTcSuite, report.getTcSuite())
+							.set(ApiReport::getTcName, report.getTcName())
+							.set(ApiReport::getTcResult, report.getTcResult())
+							.set(ApiReport::getTcDuration, report.getTcDuration())
+							.set(ApiReport::getTcHeader, report.getTcHeader())
+							.set(ApiReport::getTcLog, report.getTcLog())
+							.set(ApiReport::getTcRequest, report.getTcRequest())
+							.set(ApiReport::getTcResponse, report.getTcResponse())
+							.set(ApiReport::getTcAssert, report.getTcAssert())
+							.setSql("TC_RUNS_NUM=TC_RUNS_NUM+1")
+							.set(ApiReport::getCreateTime, report.getCreateTime())
+							 .eq(ApiReport::getHistoryId, report.getHistoryId())
+							 .eq(ApiReport::getJobId, report.getJobId())
+							 .eq(ApiReport::getCaseId, report.getCaseId());
+		return apiReport.update(updateWrapper);
 	}
 	public List<TheadGroupConfig> getTheadGroupConfig() {
 		return theadGroupConfig.list();
 	}
+	
+	/**
+	 * 更新历史纪录列表数据
+	 * @param job
+	 * @return
+	 */
+	public Boolean updateHistoryListTable(TestScheduled job) {
+		QueryWrapper<ApiReport> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ApiReport::getHistoryId,job.getHistoryId())
+							.eq(ApiReport::getJobId,job.getId())
+							.select(ApiReport::getTcResult);
+		List<ApiReport> apiList=apiReport.list(queryWrapper);
+		List<ApiReport> succList=apiList.stream()
+				.filter(s -> s.getTcResult().equals(true))
+				.collect(Collectors.toList());
+		UpdateWrapper<ApiReportHistoryList> updateWrapper = new UpdateWrapper<>();
+		updateWrapper.lambda().set(ApiReportHistoryList::getTcTotal, apiList.size())
+		 	.set(ApiReportHistoryList::getTcPassed, succList.size())
+		 	.set(ApiReportHistoryList::getTcFailed, apiList.size()-succList.size())
+		 	.set(ApiReportHistoryList::getEndTime, LocalDateTime.now())
+		 	.eq(ApiReportHistoryList::getId, job.getHistoryId())
+		 	.eq(ApiReportHistoryList::getJobId, job.getId());
+		return historyStat.update(updateWrapper);
+	}
+	
 	/**
 	 * 根据用例ID查询用例
 	 * @param id
@@ -85,6 +142,20 @@ public class TestDataServiceImpl implements TestDataService {
 		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.eq("CASE_ID", Integer.valueOf(id));
 		return apiTestcase.getOne(queryWrapper);
+	}
+	public List<ApiTestcase> getTestcaseOfFail(String history) {
+		QueryWrapper<ApiReport> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ApiReport::getHistoryId, history)
+							.eq(ApiReport::getTcResult,false)
+							.select(ApiReport::getCaseId);
+		List<ApiReport> ids=apiReport.list(queryWrapper);
+		if(ids.size()==0)
+			return new ArrayList<ApiTestcase>();
+		List<Integer> cids = new ArrayList<Integer>();
+		ids.forEach(item->cids.add(item.getCaseId()));
+		QueryWrapper<ApiTestcase> wrapper = new QueryWrapper<>();
+		wrapper.lambda().in(ApiTestcase::getCaseId, cids);
+		return apiTestcase.list(wrapper);
 	}
 	public List<ApiTestcase> getTestcase() {
 		return apiTestcase.list();
@@ -152,12 +223,7 @@ public class TestDataServiceImpl implements TestDataService {
 		}
 		return null;
 	}
-//	public Beanshell getBeanshell(int caseID) {
-//		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
-//		queryWrapper.eq("CASE_ID", caseID);
-//		return beanshell.getOne(queryWrapper);
-//		
-//	}
+
 	public List<Beanshell> getPreBeanshell(int caseID) {
 		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)

@@ -8,6 +8,7 @@ public interface TestPlanService {
 	//启动测试计划
 	public void startTestPlan(TestScheduled trig) throws URISyntaxException;
 	
+	public Boolean reTryTestPlan(TestScheduled trig) throws URISyntaxException;
 	//停止测试计划
 	public void stopTestPlan();
 	

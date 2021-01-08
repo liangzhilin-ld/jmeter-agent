@@ -1,5 +1,6 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
+import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.TestScheduled;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
 //import com.autotest.jmeter.jmeteragent.config.TestPlanCreator;
@@ -9,16 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jorphan.collections.HashTree;
 
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.List;
 
 @Service
 public class TestPlanServiceImpl implements TestPlanService{
-	@Autowired
-	private JmeterProperties jmeterProperties;
+	
+	private @Autowired JmeterProperties jmeterProperties;
 	private LoadDispatcher loadDispatcher;
+	private @Autowired TestDataServiceImpl testData;
 	private @Autowired TestPlanCreator2 testPlan;
 	private static final Logger log = LoggerFactory.getLogger(TestPlanServiceImpl.class);
 	@Override
@@ -30,10 +36,22 @@ public class TestPlanServiceImpl implements TestPlanService{
 		HashTree testPlanTree=testPlan.create(trig);
 		log.info("执行测试");
 		//loadDispatcher=new LoadDispatcher(jmeterProperties,testPlanCreator.getRequestParam().getTestRecordId());
-		loadDispatcher=new LoadDispatcher(jmeterProperties);
+		loadDispatcher=new LoadDispatcher(jmeterProperties,trig);
 		loadDispatcher.startTestPlan(testPlanTree);
+		
 	}
 	
+	@Override
+	
+	public Boolean reTryTestPlan(TestScheduled trig) throws URISyntaxException{
+		List<ApiTestcase> failedList=testData.getTestcaseOfFail(trig.getHistoryId());
+		if(failedList.size()==0)
+			return false;
+		HashTree testPlanTree=testPlan.reTryTest(trig,failedList);
+		loadDispatcher=new LoadDispatcher(jmeterProperties,trig);
+		loadDispatcher.startTestPlan(testPlanTree);
+		return true;
+	}
 	@Override
 	public void stopTestPlan() {
 		log.info("停止测试");

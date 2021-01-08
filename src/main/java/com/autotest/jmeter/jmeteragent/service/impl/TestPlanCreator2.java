@@ -101,23 +101,68 @@ public class TestPlanCreator2 {
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
         log.info("创建线程组");
         int threadNum=trig.getNumOfConcurrent();//并发数判断
-        ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
-        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
-        log.info("添加登陆组件");
-        threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
-        log.info("添加接口数据");
         List<ApiTestcase>  listcase=testData.getTestcaseByIds(trig);
-        listcase.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
-        testPlanTree.add(testPlan, threadGroupHashTree);
+        if(threadNum>listcase.size()) {
+        	testPlanTree.add(testPlan, createThreadGroup(listcase));
+        	return testPlanTree;
+        }
+        for (int i = 0; i < listcase.size()/threadNum; i++) {
+//        	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
+//            ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
+//            log.info("添加登陆组件");
+//            threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
+//            log.info("添加接口数据");
+            List<ApiTestcase> subList=listcase.subList(i*threadNum, (i+1)*threadNum);
+//            subList.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
+//            testPlanTree.add(testPlan, threadGroupHashTree);
+            testPlanTree.add(testPlan,  createThreadGroup(subList));
+            
+		}
+        if(listcase.size() % threadNum != 0) {
+        	List<ApiTestcase> subList=listcase.subList((listcase.size() / threadNum) * threadNum, listcase.size());
+        	testPlanTree.add(testPlan,  createThreadGroup(subList));
+        }
         return testPlanTree;
     }
 
+    
+    public ListedHashTree createThreadGroup(List<ApiTestcase> subList) {
+    	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
+        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
+        log.info("添加登陆组件");
+        threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
+        subList.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
+        return threadGroupHashTree;
+    }
+    
+    
+    
+    
+    public HashTree reTryTest(TestScheduled trig,List<ApiTestcase> failedList) {
+        log.info("创建测试计划");
+        TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
+        ListedHashTree testPlanTree = new ListedHashTree(testPlan);
+
+        //-------------------------------------------------------------------------------------------
+        log.info("创建公共配置");
+        testPlanTree.add(testPlan, jmeterCompant.getPubArguments(trig));
+        testPlanTree.add(testPlan,ConfigElement.httpDefaultsGui());
+        testPlanTree.add(testPlan,ConfigElement.createCookieManager());
+        testPlanTree.add(testPlan,ConfigElement.createCacheManager());
+        testPlanTree.add(testPlan,ConfigElement.createHeaderManager(jmeterCompant.getPubHeader(trig)));
+        testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
+        log.info("创建线程组");
+        testPlanTree.add(testPlan,  createThreadGroup(failedList));
+        return testPlanTree;
+    }
+    
+    
     /**
      * 创建线程组
      *
      * @return
      */
-    public ThreadGroup createThreadGroup() {
+    public ThreadGroup threadGroupTree() {
         ThreadGroup threadGroup = new ThreadGroup();
         threadGroup.setName("Example Thread Group");
         threadGroup.setNumThreads(2);
@@ -134,34 +179,7 @@ public class TestPlanCreator2 {
         return threadGroup;
     }
 
-    /**
-     * 创建循环控制器
-     *
-     * @return
-     */
-    public LoopController createLoopController() {
-        // Loop Controller
-        LoopController loopController = new LoopController();
-        loopController.setLoops(jmeterProperties.getLoops());
-        loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
-        loopController.initialize();
-        return loopController;
-    }  
-	/**
-	 * 用户自定义变量
-	 * @return
-	 */
-	public Arguments getArguments(String projectID) {
-   	 //自定义变量
-	   ProjectManage pro=testData.getPoject(projectID);
-	   List<String[]> definedVars = new ArrayList<>();
-	   List<UserDefinedVariable> listDefine=testData.getUserDefinedVar(1);
-	   for (UserDefinedVariable userDefine : listDefine) {
-		   String[] record= {userDefine.getName(),userDefine.getValue()};//
-		   definedVars.add(record);
-	   }
-       Arguments value = ConfigElement.createArguments(definedVars);
-       return value;
-   }
+ 
+	
 
 }

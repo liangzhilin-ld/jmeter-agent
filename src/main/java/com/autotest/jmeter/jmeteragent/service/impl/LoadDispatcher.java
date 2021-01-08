@@ -18,8 +18,11 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
 import java.io.File;
+
+import com.autotest.data.mode.TestScheduled;
 //import com.techstar.conf.Constants;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
+import com.autotest.util.SpringContextUtil;
 //import com.techstar.dmp.jmeteragent.jmeter.ReportGenerator;
 //import com.techstar.dmp.jmeteragent.jmeter.ResultSender;
 import com.thoughtworks.xstream.converters.ConversionException;
@@ -75,6 +78,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 
 import javax.script.*;
 import javax.swing.*;
@@ -330,10 +334,12 @@ public class LoadDispatcher implements JMeterPlugin {
     private String resultReceiverUrl;
     private static JMeterEngine engine;
     private static DistributedRunner distributedRunner;
-
+    private static TestScheduled job;
+    private static int retryCount=0;
 //    private ResultSender resultSender;
     private String testRecordId;
-    public LoadDispatcher(JmeterProperties jmeterProperties) {
+    public LoadDispatcher(JmeterProperties jmeterProperties,TestScheduled tc) {
+    	this.setJob(tc);
         this.setJmeterHome(jmeterProperties.getHome());
         this.setJmeterPropertiesFileName(jmeterProperties.getPropertiesFileName());
         this.setLogPath(jmeterProperties.getHome()+File.separator+jmeterProperties.getLogPath()+File.separator);
@@ -352,7 +358,9 @@ public class LoadDispatcher implements JMeterPlugin {
         }
         return loadDispatcher;
     }*/
-
+    public void setJob(TestScheduled tc) {
+        this.job = tc;
+    }
     public void setJmeterHome(String jmeterHome) {
         this.jmeterHome = jmeterHome;
     }
@@ -1445,12 +1453,40 @@ public class LoadDispatcher implements JMeterPlugin {
                 stopSoon.start();
             }
         }
-
         @Override
         public void testEnded() {
             endTest(false);
+            testReyTry();
         }
-
+        /**
+         * 失败重试方法,更新统计结果数据
+         */
+        @Async
+        public void testReyTry() {
+        	try {
+            	//重试机制
+            	retryCount=retryCount+1;
+            	if(retryCount<=job.getRetry()) {
+            		Boolean isTry=((TestPlanServiceImpl) SpringContextUtil
+            				.getBean("testPlanServiceImpl"))
+            				.reTryTestPlan(job);
+            		if(!isTry) {
+            			retryCount=0;
+            			((TestDataServiceImpl) SpringContextUtil
+            					.getBean("testDataServiceImpl"))
+            					.updateHistoryListTable(job);
+            		}
+            	}else {
+            		retryCount=0;
+            		((TestDataServiceImpl) SpringContextUtil
+            				.getBean("testDataServiceImpl"))
+            				.updateHistoryListTable(job);
+            	}
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
         @Override
         public void testStarted(String host) {
             final long now = System.currentTimeMillis();
@@ -1815,7 +1851,7 @@ public class LoadDispatcher implements JMeterPlugin {
 //        String reportName = logPath.concat("report.jtl");
 //        String htlmPath = logPath.concat("html");
         //String[] args1 = new String[]{"-n", "-e", "-o".concat(htlmPath), "-l".concat(reportName)};//,"-r"
-        String[] args1 = new String[]{"-n", "-e", "-o",htlmPath, "-l",reportName};      
+        String[] args1 = new String[]{"-n", "-e", "-o",htlmPath, "-l",reportName}; 
         JMeterUtils.loadJMeterProperties(jmeterHome.concat(File.separator).concat(jmeterPropertiesFileName));
         JMeterUtils.setJMeterHome(jmeterHome);
         this.start(args1, testPlanTree);
