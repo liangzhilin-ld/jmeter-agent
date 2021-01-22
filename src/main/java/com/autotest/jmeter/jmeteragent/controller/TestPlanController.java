@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autotest.data.mapper.ApiHeaderMapper;
@@ -19,6 +20,7 @@ import com.autotest.data.mapper.ApiTestcaseMapper;
 import com.autotest.data.mapper.SyetemDbMapper;
 import com.autotest.data.mapper.TheadGroupConfigMapper;
 import com.autotest.data.mode.ApiHeader;
+import com.autotest.data.mode.ApiReport;
 import com.autotest.data.mode.ApiSwagger;
 import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.TestScheduled;
@@ -26,6 +28,7 @@ import com.autotest.data.mode.TheadGroupConfig;
 import com.autotest.data.mode.UserDefinedVariable;
 //import com.techstar.dmp.jmeteragent.bean.Response;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
+import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestPlanServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
@@ -40,8 +43,9 @@ import io.swagger.annotations.ApiOperation;
 public class TestPlanController {
 	private static final Logger log = LoggerFactory.getLogger(TestPlanServiceImpl.class);
 
-	@Autowired
-	private TestPlanService testPlanService;
+	
+	private @Autowired TestPlanService testPlanService;
+	private @Autowired JmeterHashTreeServiceImpl debugrePonse;
 
 	/**
 	 * 启动测试计划
@@ -126,26 +130,46 @@ public class TestPlanController {
 		return new Date().toString() + "  测试完成！";
 	}
 
-
+	@ApiOperation(value = "接口调试")
+	@RequestMapping(value = "/startDebug", method = RequestMethod.POST)
+	public ApiReport debug(@RequestParam(value = "envId", required = true) int envId,@RequestBody ApiTestcase api) {
+		
+		try {
+			long startTime = System.currentTimeMillis();
+			testPlanService.debugTestCase(api,envId);
+			ApiReport response=debugrePonse.getQueue();
+			while(response==null) {
+				long dur=System.currentTimeMillis()-startTime;
+				response=debugrePonse.getQueue();
+				if(dur>20000)break;
+			}
+			return response;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		
+		//debugrePonse.getQueue()
+	}
 
 	private @Autowired TestDataServiceImpl testData;
 	
-	@ApiOperation(value = "数据库调试")
-	@RequestMapping(value = "/getDtest", method = RequestMethod.GET)
-	public List<ApiHeader> getDtest() {
-
-		Wrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-		// theadGroup.selectList(queryWrapper);
-
-//		System.out.println(systemDbMapper.);
-		//testcaseMapper.selectList(queryWrapper);
-		List<ApiHeader> headers=testData.getApiHeader();
-//		Map<String, String> headerMap=new HashMap<String, String>();
-//		for (ApiHeader apiHeader : headers) {
-//			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
-//		}
-		Map<String, String> headerMap=testData.getTestPlanHeader(1);
-//        return testcaseMapper.selectList(queryWrapper);
-		return headers;
-	}
+//	@ApiOperation(value = "数据库调试")
+//	@RequestMapping(value = "/getDtest", method = RequestMethod.GET)
+//	public List<ApiHeader> getDtest() {
+//
+//		Wrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
+//		// theadGroup.selectList(queryWrapper);
+//
+////		System.out.println(systemDbMapper.);
+//		//testcaseMapper.selectList(queryWrapper);
+//		List<ApiHeader> headers=testData.getApiHeader();
+////		Map<String, String> headerMap=new HashMap<String, String>();
+////		for (ApiHeader apiHeader : headers) {
+////			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
+////		}
+//		Map<String, String> headerMap=testData.getTestPlanHeader(1);
+////        return testcaseMapper.selectList(queryWrapper);
+//		return headers;
+//	}
 }

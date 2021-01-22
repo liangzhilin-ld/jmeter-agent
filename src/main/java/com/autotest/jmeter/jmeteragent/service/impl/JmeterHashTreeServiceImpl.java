@@ -2,9 +2,12 @@ package com.autotest.jmeter.jmeteragent.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 import org.apache.jmeter.assertions.AssertionResult;
@@ -19,6 +22,7 @@ import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.autotest.data.mapper.ApiReportMapper;
 import com.autotest.data.mode.*;
@@ -43,6 +47,7 @@ import lombok.extern.apachecommons.CommonsLog;
  */
 @Service
 @CommonsLog
+@Transactional(rollbackFor=Exception.class)
 public class JmeterHashTreeServiceImpl {
 	private @Autowired TestDataServiceImpl testDadaService;
 	private @Autowired UserDefinedVariableServiceImpl userDefinedVar;
@@ -74,11 +79,11 @@ public class JmeterHashTreeServiceImpl {
 	   	 //自定义变量
 		String cid=trig.getTcCaseids().split(",")[0];
 		ApiTestcase testcase = testDadaService.getTestcaseByID(cid);
-		List<UserDefinedVariable> udvs=testDadaService.getUserDefinedVar(testcase.getProjectId());
-		List<UserDefinedVariable> definedVars=udvs.stream()
-				.filter(u -> u.getType().equals("0"))
-				.collect(Collectors.toList());
-		Arguments args=ConfigElement.createArguments2(definedVars);
+		List<UserDefinedVariable> udvs=testDadaService.getArgumentsByPid(testcase.getProjectId());
+//		List<UserDefinedVariable> definedVars=udvs.stream()
+//				.filter(u -> u.getCaseId().equals(-1))
+//				.collect(Collectors.toList());
+		Arguments args=ConfigElement.createArguments2(udvs);
 		Argument host = new Argument("host", trig.getTestIp());
         Argument port = new Argument("port", trig.getTestPort());
         host.setMetaData("=");
@@ -89,6 +94,23 @@ public class JmeterHashTreeServiceImpl {
         args.addArgument(new Argument("HistoryId", trig.getHistoryId()));
 	    return args;
 	}
+	
+	/**
+	 * 调试获取公共变量
+	 * @param projectId 项目编号
+	 * @param envId  环境
+	 * @return
+	 */
+	public Arguments getPubArgumentsOfDebug(int projectId,int envId) {	
+		List<UserDefinedVariable> udvs=testDadaService.getArgumentsByPid(projectId);
+		SyetemEnv env=testDadaService.getEnv(envId);
+		Arguments args=ConfigElement.createArguments2(udvs);
+		Argument host = new Argument("host", env.getIp());
+        Argument port = new Argument("port", env.getPort());
+        args.addArgument(host);
+        args.addArgument(port);
+		return args;
+	}
 	/**
 	 * 获取单个测试用例自定义参数
 	 * @param trig
@@ -97,7 +119,7 @@ public class JmeterHashTreeServiceImpl {
 	private void addArguments(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
 		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, api.getCaseId())
-							 .eq(UserDefinedVariable::getType, "1");
+							 .eq(UserDefinedVariable::getProjectId, api.getProjectId());
 		List<UserDefinedVariable> definedVars=userDefinedVar.list(queryWrapper);
 		if(definedVars.size()>0) {
 			Arguments args=ConfigElement.createArguments2(definedVars);
@@ -115,7 +137,7 @@ public class JmeterHashTreeServiceImpl {
 		ApiTestcase testcase = testDadaService.getTestcaseByID(cid);
 		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ApiHeader::getProjectId, testcase.getProjectId())
-							 .eq(ApiHeader::getType,"0");
+							 .eq(ApiHeader::getCaseId,-1);
 		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
 	    return apiHeaders;
 	}
@@ -130,8 +152,7 @@ public class JmeterHashTreeServiceImpl {
 //		ApiTestcase testcase = testDadaService.getTestcaseByID(String.valueOf(caseId));
 		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ApiHeader::getProjectId, api.getProjectId())
-							 .eq(ApiHeader::getCaseId,api.getCaseId())
-							 .eq(ApiHeader::getType,"1");
+							 .eq(ApiHeader::getCaseId,api.getCaseId());
 		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
 		if(apiHeaders.size()>0) {
 			HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
@@ -254,6 +275,13 @@ public class JmeterHashTreeServiceImpl {
 		
 	}
 	
+	private Queue<ApiReport> queue = new LinkedList<ApiReport>();
+	
+	public synchronized ApiReport getQueue() {
+		ApiReport response=queue.poll();
+		return response;
+	}
+
 	public synchronized void writeSamplers(HTTPSampleResult result) {
 		
 		JMeterContext ctx=JMeterContextService.getContext();
@@ -286,6 +314,12 @@ public class JmeterHashTreeServiceImpl {
 		rport.setTcAssert(assertStr);
 		rport.setTcRunsNum(1);
 		rport.setCreateTime(LocalDateTime.now());
+		if(rport.getJobId()==null) {
+//			if(queue.size()>0)
+//				queue.forEach(item->queue.poll());
+			queue.offer(rport);
+			return;
+		}
 		Boolean flag=testDadaService.updateApiReport(rport);
 		if(!flag)log.error("用例ID:"+rport.getCaseId()+",名称:"+rport.getTcName()+"-----更新失败");
 		//result.getQueryString();

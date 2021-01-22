@@ -2,6 +2,7 @@ package com.autotest.jmeter.jmeteragent.service;
 
 import java.net.URISyntaxException;
 
+import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.TestScheduled;
 
 public interface TestPlanService {
@@ -9,6 +10,7 @@ public interface TestPlanService {
 	public void startTestPlan(TestScheduled trig) throws URISyntaxException;
 	
 	public Boolean reTryTestPlan(TestScheduled trig) throws URISyntaxException;
+	public void debugTestCase(ApiTestcase api,int envId);
 	//停止测试计划
 	public void stopTestPlan();
 	

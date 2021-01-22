@@ -156,7 +156,28 @@ public class TestPlanCreator2 {
         return testPlanTree;
     }
     
-    
+  
+	/**
+	 * 用例调试
+	 * @param api
+	 * @param envId
+	 * @return
+	 */
+	public HashTree createDebug(ApiTestcase api,int envId) {
+    	TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
+        ListedHashTree testPlanTree = new ListedHashTree(testPlan);
+        log.info("创建公共配置");
+        testPlanTree.add(testPlan, jmeterCompant.getPubArgumentsOfDebug(api.getProjectId(),envId));
+        testPlanTree.add(testPlan,ConfigElement.httpDefaultsGui());
+        testPlanTree.add(testPlan,ConfigElement.createCookieManager());
+        testPlanTree.add(testPlan,ConfigElement.createCacheManager());
+        testPlanTree.add(testPlan,ConfigElement.createHeaderManager(testData.getPubHeader(api.getProjectId())));
+        testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
+        List<ApiTestcase> cases =new ArrayList<ApiTestcase>();
+        cases.add(api);
+        testPlanTree.add(testPlan,  createThreadGroup(cases));
+        return testPlanTree;
+    }
     /**
      * 创建线程组
      *

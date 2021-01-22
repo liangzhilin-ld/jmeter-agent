@@ -52,6 +52,20 @@ public class TestPlanServiceImpl implements TestPlanService{
 		loadDispatcher.startTestPlan(testPlanTree);
 		return true;
 	}
+	
+	@Override
+	public void debugTestCase(ApiTestcase api,int envId) {
+		log.info("创建测试计划树");
+		
+//		TestPlanCreator testPlanCreator = new TestPlanCreator(jmeterProperties,jsonString);
+//		HashTree testPlanTree = testPlanCreator.create();
+		HashTree testPlanTree=testPlan.createDebug(api,envId);
+		log.info("执行测试");
+		//loadDispatcher=new LoadDispatcher(jmeterProperties,testPlanCreator.getRequestParam().getTestRecordId());
+		loadDispatcher=new LoadDispatcher(jmeterProperties);
+		loadDispatcher.startTestPlan(testPlanTree);
+		
+	}
 	@Override
 	public void stopTestPlan() {
 		log.info("停止测试");

@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.autotest.data.mode.*;
 import com.autotest.data.service.impl.*;
 import com.autotest.jmeter.jmeteragent.service.TestDataService;
@@ -24,6 +26,7 @@ import cn.hutool.core.util.StrUtil;
  *
  */
 @Repository
+@Transactional(rollbackFor=Exception.class)
 public class TestDataServiceImpl implements TestDataService {
 
 	private @Autowired ApiHeaderServiceImpl apiHeader;
@@ -42,6 +45,7 @@ public class TestDataServiceImpl implements TestDataService {
 	private @Autowired ProcessorJsonServiceImpl jsonServer;
 	private @Autowired AssertJsonServiceImpl assertJson;
 	private @Autowired AssertResponseServiceImpl assertRes;
+	private @Autowired SyetemEnvServiceImpl envServer;
 	private List<ApiHeader> headers;
 
 	@Override
@@ -50,35 +54,51 @@ public class TestDataServiceImpl implements TestDataService {
 		headers=apiHeaders;
 		return apiHeaders;
 	}
-	
-	public Map<String, String> getTestPlanHeader(int projectID){
-		getApiHeader();
-		Map<String, String> headerMap=new HashMap<String, String>();
-		for (ApiHeader header : headers) {
-			if(header.getProjectId().equals(projectID)&&header.getType().equals("0"))
-				headerMap.put(header.getKey(), header.getValue());
-		}
-		return headerMap;
-	} 
-	public Map<String, String>  getSamplerHeader(int projectID,int caseID){
-		Map<String, String> headerMap=new HashMap<String, String>();
-		for (ApiHeader header : headers) {
-			if(header.getProjectId().equals(projectID)&&header.getCaseId().equals(caseID))
-				headerMap.put(header.getKey(), header.getValue());
-		}
-		return headerMap;
+
+//	public Map<String, String> getTestPlanHeader(int projectID){
+//		getApiHeader();
+//		Map<String, String> headerMap=new HashMap<String, String>();
+//		for (ApiHeader header : headers) {
+//			if(header.getProjectId().equals(projectID)&&header.getCaseId().equals(-1))
+//				headerMap.put(header.getKey(), header.getValue());
+//		}
+//		return headerMap;
+//	} 
+//	public Map<String, String>  getSamplerHeader(int projectID,int caseID){
+//		Map<String, String> headerMap=new HashMap<String, String>();
+//		for (ApiHeader header : headers) {
+//			if(header.getProjectId().equals(projectID)&&header.getCaseId().equals(caseID))
+//				headerMap.put(header.getKey(), header.getValue());
+//		}
+//		return headerMap;
+//	}
+	public List<ApiHeader> getSamplerHeader(int caseId) {
+		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ApiHeader::getCaseId,caseId)
+							 .ne(ApiHeader::getCaseId, -1);
+		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
+	    return apiHeaders;
 	}
-	
+	public List<ApiHeader> getPubHeader(int projectId) {
+		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ApiHeader::getProjectId, projectId)
+							 .eq(ApiHeader::getCaseId,-1);
+		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
+	    return apiHeaders;
+	}
+	public SyetemEnv getEnv(int envId) {
+		QueryWrapper<SyetemEnv> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(SyetemEnv::getId, envId);
+		SyetemEnv apiHeaders=envServer.getOne(queryWrapper);
+	    return apiHeaders;
+	}
 	public List<SyetemDictionary> getSyetemDic() {
 		return syetemDic.list();
 	}
 	public List<TestScheduled> getTestSchedule() {
 		return testSchedule.list();
 	}
-//	public Boolean updateTestSchedule(String historyid) {
-//		
-//		return testSchedule.list();
-//	}
+
 	public List<ApiReport> getApiReport() {
 		return apiReport.list();
 	}
@@ -179,12 +199,23 @@ public class TestDataServiceImpl implements TestDataService {
 	 * @param projectID 项目编号
 	 * @return
 	 */
-	public List<UserDefinedVariable> getUserDefinedVar(int projectID) {
+	public List<UserDefinedVariable> getArgumentsByPid(int projectID) {
 		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(UserDefinedVariable::getProjectId, projectID);
+		queryWrapper.lambda().eq(UserDefinedVariable::getProjectId, projectID)
+							 .eq(UserDefinedVariable::getCaseId, -1);
 		return userDefinedVar.list(queryWrapper);
 	}
-	
+	/**
+	 * 查询自定义变量
+	 * @param caseId 用例编号
+	 * @return
+	 */
+	public List<UserDefinedVariable> getArgumentsByCaseId(int caseId) {
+		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, caseId)
+							 .ne(UserDefinedVariable::getCaseId, -1);
+		return userDefinedVar.list(queryWrapper);
+	}
 	public ProjectManage getPoject(String projetID) {
 		List<ProjectManage> list=projectManage.list();
 		for (ProjectManage projectManage : list) {

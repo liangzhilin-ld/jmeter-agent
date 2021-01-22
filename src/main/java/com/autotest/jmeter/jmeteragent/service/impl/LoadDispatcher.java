@@ -351,7 +351,13 @@ public class LoadDispatcher implements JMeterPlugin {
         //this.setResultSender(new ResultSender(jmeterProperties.getResultReceiverUrl()));
         //this.setTestRecordId(testRecordId);
     }
-
+    public LoadDispatcher(JmeterProperties jmeterProperties) {
+    	this.setJmeterHome(jmeterProperties.getHome());
+        this.setJmeterPropertiesFileName(jmeterProperties.getPropertiesFileName());
+        this.setLogPath(jmeterProperties.getHome()+File.separator+jmeterProperties.getLogPath()+File.separator);
+        this.setResultReceiverUrl(jmeterProperties.getResultReceiverUrl());
+        System.setProperty("jmeter.home",jmeterProperties.getHome());
+    }
   /*  public static LoadDispatcher getLoadDispatcher(JmeterProperties jmeterProperties,String testRecordId) {
         if (loadDispatcher == null) {
 
@@ -1456,7 +1462,7 @@ public class LoadDispatcher implements JMeterPlugin {
         @Override
         public void testEnded() {
             endTest(false);
-            testReyTry();
+            if(job!=null)testReyTry();
         }
         /**
          * 失败重试方法,更新统计结果数据
