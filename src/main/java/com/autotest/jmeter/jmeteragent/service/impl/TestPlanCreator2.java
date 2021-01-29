@@ -3,12 +3,10 @@ package com.autotest.jmeter.jmeteragent.service.impl;
 
 import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.ApiTestcase;
-import com.autotest.data.mode.Beanshell;
-import com.autotest.data.mode.ProcessorJdbc;
+import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.ProjectManage;
 import com.autotest.data.mode.SyetemDb;
 import com.autotest.data.mode.TestScheduled;
-import com.autotest.data.mode.UserDefinedVariable;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.PostProcessors;
@@ -101,7 +99,7 @@ public class TestPlanCreator2 {
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
         log.info("创建线程组");
         int threadNum=trig.getNumOfConcurrent();//并发数判断
-        List<ApiTestcase>  listcase=testData.getTestcaseByIds(trig);
+        List<HttpTestcase>  listcase=testData.getTestcaseByIds(trig);
         if(threadNum>listcase.size()) {
         	testPlanTree.add(testPlan, createThreadGroup(listcase));
         	return testPlanTree;
@@ -112,21 +110,21 @@ public class TestPlanCreator2 {
 //            log.info("添加登陆组件");
 //            threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
 //            log.info("添加接口数据");
-            List<ApiTestcase> subList=listcase.subList(i*threadNum, (i+1)*threadNum);
+            List<HttpTestcase> subList=listcase.subList(i*threadNum, (i+1)*threadNum);
 //            subList.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
 //            testPlanTree.add(testPlan, threadGroupHashTree);
             testPlanTree.add(testPlan,  createThreadGroup(subList));
             
 		}
         if(listcase.size() % threadNum != 0) {
-        	List<ApiTestcase> subList=listcase.subList((listcase.size() / threadNum) * threadNum, listcase.size());
+        	List<HttpTestcase> subList=listcase.subList((listcase.size() / threadNum) * threadNum, listcase.size());
         	testPlanTree.add(testPlan,  createThreadGroup(subList));
         }
         return testPlanTree;
     }
 
     
-    public ListedHashTree createThreadGroup(List<ApiTestcase> subList) {
+    public ListedHashTree createThreadGroup(List<HttpTestcase> subList) {
     	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
         ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
         log.info("添加登陆组件");
@@ -138,7 +136,7 @@ public class TestPlanCreator2 {
     
     
     
-    public HashTree reTryTest(TestScheduled trig,List<ApiTestcase> failedList) {
+    public HashTree reTryTest(TestScheduled trig,List<HttpTestcase> failedList) {
         log.info("创建测试计划");
         TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
@@ -163,7 +161,7 @@ public class TestPlanCreator2 {
 	 * @param envId
 	 * @return
 	 */
-	public HashTree createDebug(ApiTestcase api,int envId) {
+	public HashTree createDebug(HttpTestcase api,int envId) {
     	TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
         log.info("创建公共配置");
@@ -173,7 +171,7 @@ public class TestPlanCreator2 {
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(testData.getPubHeader(api.getProjectId())));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
-        List<ApiTestcase> cases =new ArrayList<ApiTestcase>();
+        List<HttpTestcase> cases =new ArrayList<HttpTestcase>();
         cases.add(api);
         testPlanTree.add(testPlan,  createThreadGroup(cases));
         return testPlanTree;

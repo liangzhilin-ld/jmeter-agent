@@ -21,6 +21,7 @@ import org.apache.jorphan.collections.ListedHashTree;
 
 import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.HttpTestcase;
 import com.autotest.jmeter.entity.assertion.ResponseAssert;
 import com.autotest.jmeter.entity.processors.JSONExtractor;
 import cn.hutool.core.util.StrUtil;
@@ -64,7 +65,7 @@ public class HTTPSampler {
      *
      * @return
      */
-    public static TechstarHTTPSamplerProxy crtHTTPSampler(ApiTestcase testApi,Map<String, String> header) {
+    public static TechstarHTTPSamplerProxy crtHTTPSampler(HttpTestcase testApi,Map<String, String> header) {
     	TechstarHTTPSamplerProxy httpSampler = new TechstarHTTPSamplerProxy(HTTPSamplerFactory.DEFAULT_CLASSNAME);
         httpSampler.setName(testApi.getApiUri());
         HeaderManager headerManager=ConfigElement.createHeaderManager(header);
@@ -125,7 +126,7 @@ public class HTTPSampler {
     public static ListedHashTree loginControll() {
     	OnceOnlyController onceController=LogicController.onceOnlyController();
     	ListedHashTree onceControllerTree=new ListedHashTree(onceController); 
-    	ApiTestcase casess=new ApiTestcase();
+    	HttpTestcase casess=new HttpTestcase();
     	//g接口添加
         casess.setApiUri("/auth/g");
         casess.setApiMethod("GET");

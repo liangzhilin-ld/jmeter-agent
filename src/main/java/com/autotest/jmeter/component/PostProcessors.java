@@ -11,9 +11,8 @@ import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
-
-import com.autotest.data.mode.ProcessorJdbc;
-import com.autotest.data.mode.ProcessorJson;
+import com.autotest.data.mode.processors.JdbcProcessor;
+import com.autotest.data.mode.processors.JsonExtractor;
 import com.autotest.jmeter.entity.processors.JSONExtractor;
 
 public class PostProcessors {
@@ -49,7 +48,7 @@ public class PostProcessors {
     	return jsonPost;
     }
     
-    public static JSONPostProcessor jsonPostProcessor(ProcessorJson jsonExtrator) {
+    public static JSONPostProcessor jsonPostProcessor(JsonExtractor jsonExtrator) {
     	//JMeterContext context = JMeterContextService.getContext();
     	JSONPostProcessor jsonPost=new JSONPostProcessor();
     	//jsonPost.setThreadContext(context);
@@ -80,7 +79,7 @@ public class PostProcessors {
     		jsonPost.setComputeConcatenation(true);    	
     	return jsonPost;
     }
-    public static JDBCPostProcessor jdbcPostProcessor(ProcessorJdbc postJdbc) {
+    public static JDBCPostProcessor jdbcPostProcessor(JdbcProcessor postJdbc) {
     	JDBCPostProcessor jdbcPost=new JDBCPostProcessor();
     	jdbcPost.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
     	jdbcPost.setProperty(TestElement.TEST_CLASS,JDBCPostProcessor.class.getName());

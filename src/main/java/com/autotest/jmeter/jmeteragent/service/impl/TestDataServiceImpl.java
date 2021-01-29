@@ -13,13 +13,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autotest.data.mapper.ProjectManageMapper;
 import com.autotest.data.mode.*;
+import com.autotest.data.mode.assertions.AssertEntity;
+import com.autotest.data.mode.assertions.JsonAssertion;
+import com.autotest.data.mode.assertions.ResponseAssertion;
+import com.autotest.data.mode.confelement.ApiHeader;
+import com.autotest.data.mode.confelement.UserDefinedVariable;
+import com.autotest.data.mode.custom.BeanShell;
+import com.autotest.data.mode.processors.JdbcProcessor;
+import com.autotest.data.mode.processors.JsonExtractor;
+import com.autotest.data.mode.processors.PostProcessors;
+import com.autotest.data.mode.processors.PreProcessors;
 import com.autotest.data.service.impl.*;
-import com.autotest.jmeter.jmeteragent.service.TestDataService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
+import net.sf.json.JSONObject;
 
 /**
  * @author Techstar
@@ -27,33 +38,27 @@ import cn.hutool.core.util.StrUtil;
  */
 @Repository
 @Transactional(rollbackFor=Exception.class)
-public class TestDataServiceImpl implements TestDataService {
+public class TestDataServiceImpl {
 
-	private @Autowired ApiHeaderServiceImpl apiHeader;
+
 	private @Autowired TheadGroupConfigServiceImpl theadGroupConfig;
-	private @Autowired ApiTestcaseServiceImpl apiTestcase;
-	private @Autowired UserDefinedVariableServiceImpl userDefinedVar;
+	private @Autowired HttpTestcaseServiceImpl apiTestcase;
+	private @Autowired HttpTestcaseServiceImpl httpServer;
+//	private @Autowired ApiTestcase2ServiceImpl apiTestcase2;
 	private @Autowired TestScheduledServiceImpl testSchedule;
 	private @Autowired ApiReportServiceImpl apiReport;
 	private @Autowired ApiReportHistoryListServiceImpl historyStat;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
 	private @Autowired ProjectManageServiceImpl projectManage;
-	private @Autowired ProcessorJdbcServiceImpl jdbcProcess;
 	private @Autowired SyetemDbServiceImpl sysDb;
 	private @Autowired ApiMockServiceImpl mockData;
-	private @Autowired BeanshellServiceImpl beanshell;
-	private @Autowired ProcessorJsonServiceImpl jsonServer;
-	private @Autowired AssertJsonServiceImpl assertJson;
-	private @Autowired AssertResponseServiceImpl assertRes;
+	
 	private @Autowired SyetemEnvServiceImpl envServer;
-	private List<ApiHeader> headers;
 
-	@Override
-	public List<ApiHeader> getApiHeader() {
-		List<ApiHeader> apiHeaders=apiHeader.list();
-		headers=apiHeaders;
-		return apiHeaders;
-	}
+//	public ApiTestcase2 saveTestCase2(ApiTestcase2 api) {
+//		apiTestcase2.save(api);
+//		return api;
+//	}
 
 //	public Map<String, String> getTestPlanHeader(int projectID){
 //		getApiHeader();
@@ -73,17 +78,14 @@ public class TestDataServiceImpl implements TestDataService {
 //		return headerMap;
 //	}
 	public List<ApiHeader> getSamplerHeader(int caseId) {
-		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiHeader::getCaseId,caseId)
-							 .ne(ApiHeader::getCaseId, -1);
-		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
-	    return apiHeaders;
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId,caseId);
+	    return httpServer.getOne(queryWrapper).getHeaders();
 	}
 	public List<ApiHeader> getPubHeader(int projectId) {
-		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiHeader::getProjectId, projectId)
-							 .eq(ApiHeader::getCaseId,-1);
-		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
+		QueryWrapper<ProjectManage> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ProjectManage::getProjectId, projectId);
+		List<ApiHeader> apiHeaders=projectManage.getOne(queryWrapper).getHeaders();
 	    return apiHeaders;
 	}
 	public SyetemEnv getEnv(int envId) {
@@ -158,27 +160,27 @@ public class TestDataServiceImpl implements TestDataService {
 	 * @param id
 	 * @return
 	 */
-	public ApiTestcase getTestcaseByID(String id) {
-		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
+	public HttpTestcase getTestcaseByID(String id) {
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.eq("CASE_ID", Integer.valueOf(id));
 		return apiTestcase.getOne(queryWrapper);
 	}
-	public List<ApiTestcase> getTestcaseOfFail(String history) {
+	public List<HttpTestcase> getTestcaseOfFail(String history) {
 		QueryWrapper<ApiReport> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ApiReport::getHistoryId, history)
 							.eq(ApiReport::getTcResult,false)
 							.select(ApiReport::getCaseId);
 		List<ApiReport> ids=apiReport.list(queryWrapper);
 		if(ids.size()==0)
-			return new ArrayList<ApiTestcase>();
+			return new ArrayList<HttpTestcase>();
 		List<Integer> cids = new ArrayList<Integer>();
 		ids.forEach(item->cids.add(item.getCaseId()));
-		QueryWrapper<ApiTestcase> wrapper = new QueryWrapper<>();
-		wrapper.lambda().in(ApiTestcase::getCaseId, cids);
-		return apiTestcase.list(wrapper);
+		QueryWrapper<HttpTestcase> wrapper = new QueryWrapper<>();
+		wrapper.lambda().in(HttpTestcase::getCaseId, cids);
+		return httpServer.list(wrapper);
 	}
-	public List<ApiTestcase> getTestcase() {
-		return apiTestcase.list();
+	public List<HttpTestcase> getTestcase() {
+		return httpServer.list();
 	}
 	
 	/**
@@ -186,13 +188,13 @@ public class TestDataServiceImpl implements TestDataService {
 	 * @param trig 任务
 	 * @return
 	 */
-	public List<ApiTestcase> getTestcaseByIds(TestScheduled trig) {
+	public List<HttpTestcase> getTestcaseByIds(TestScheduled trig) {
 		if(StrUtil.isEmpty(trig.getTcCaseids()))
 			return getTestcase();
 		List<String> idList=ListUtil.of(trig.getTcCaseids().split(","));
-		QueryWrapper<ApiTestcase> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().in(ApiTestcase::getCaseId, idList);
-		return apiTestcase.list(queryWrapper);
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().in(HttpTestcase::getCaseId, idList);
+		return httpServer.list(queryWrapper);
 	}
 	/**
 	 * 查询用户自定义变量
@@ -200,10 +202,10 @@ public class TestDataServiceImpl implements TestDataService {
 	 * @return
 	 */
 	public List<UserDefinedVariable> getArgumentsByPid(int projectID) {
-		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(UserDefinedVariable::getProjectId, projectID)
-							 .eq(UserDefinedVariable::getCaseId, -1);
-		return userDefinedVar.list(queryWrapper);
+		QueryWrapper<ProjectManage> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ProjectManage::getProjectId, projectID);
+		
+		return projectManage.getOne(queryWrapper,false).getArguments();
 	}
 	/**
 	 * 查询自定义变量
@@ -211,10 +213,10 @@ public class TestDataServiceImpl implements TestDataService {
 	 * @return
 	 */
 	public List<UserDefinedVariable> getArgumentsByCaseId(int caseId) {
-		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, caseId)
-							 .ne(UserDefinedVariable::getCaseId, -1);
-		return userDefinedVar.list(queryWrapper);
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseId);
+		httpServer.getOne(queryWrapper).getArguments();
+		return httpServer.getOne(queryWrapper).getArguments();
 	}
 	public ProjectManage getPoject(String projetID) {
 		List<ProjectManage> list=projectManage.list();
@@ -225,15 +227,6 @@ public class TestDataServiceImpl implements TestDataService {
 		return null;
 	}
 
-	public ProcessorJdbc getProcessorJdbc(int id,String type) {
-		List<ProcessorJdbc> list=jdbcProcess.list();
-		for (ProcessorJdbc processor : list) {
-			if(processor.getCaseId().equals(id)&&
-					processor.getProcessorType().equals(type)) {}
-				return processor;
-		}
-		return null;
-	}
 	public SyetemDb getSyetemDb(String cnnName) {
 		List<SyetemDb> list=sysDb.list();
 		for (SyetemDb dbinfo : list) {
@@ -254,64 +247,179 @@ public class TestDataServiceImpl implements TestDataService {
 		}
 		return null;
 	}
-
-	public List<Beanshell> getPreBeanshell(int caseID) {
-		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
-		.eq(Beanshell::getBeanshellType,"2");
-		return beanshell.list(queryWrapper);
+	public List<Integer> getPreCases(int caseID) {
+		List<Integer> list=new ArrayList<Integer>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();	
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PreExtract")) {
+				PreProcessors pre=(PreProcessors) JSONObject.toBean(json, PreProcessors.class);
+				list.addAll(pre.getPreCaseIds());
+				break;
+			}
+        }
+		return list;
 		
 	}
-	public List<Beanshell> getPostBeanshell(int caseID) {
-		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
-		.eq(Beanshell::getBeanshellType,"8");
-		return beanshell.list(queryWrapper);
+	
+	public List<BeanShell> getPreBeanshell(int caseID) {
+		List<BeanShell> list=new ArrayList<BeanShell>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+	
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PreExtract")) {
+				PreProcessors pre=(PreProcessors) JSONObject.toBean(json, PreProcessors.class);
+				list.addAll(pre.getBeanShellPreProcessor());
+				break;
+			}
+        }
+		return list;
 		
 	}
-	public List<Beanshell> getAssertBeanshell(int caseID) {
-		QueryWrapper<Beanshell> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(Beanshell::getCaseId, caseID)
-		.eq(Beanshell::getBeanshellType,"11");
-		return beanshell.list(queryWrapper);
+	public List<BeanShell> getPostBeanshell(int caseID) {
+		List<BeanShell> list=new ArrayList<BeanShell>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PostExtract")) {
+				PostProcessors pre=(PostProcessors) JSONObject.toBean(json, PostProcessors.class);
+				list=pre.getBeanShellPostProcessor();
+				break;
+			}
+		}
+		return list;
 		
 	}
-	public List<ProcessorJdbc> getPreJdbc(int caseID) {
-		QueryWrapper<ProcessorJdbc> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ProcessorJdbc::getCaseId, caseID)
-		.eq(ProcessorJdbc::getProcessorType,"3");
-		return jdbcProcess.list(queryWrapper);
+	public List<BeanShell> getAssertBeanshell(int caseID) {
+		List<BeanShell> list=new ArrayList<BeanShell>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("Assertions")) {
+				AssertEntity pre=(AssertEntity) JSONObject.toBean(json, AssertEntity.class);
+				list=pre.getBeanShellAssertion();
+				break;
+			}
+		}
+		return list;
 		
 	}
-	public List<ProcessorJdbc> getPostJdbc(int caseID) {
-		QueryWrapper<ProcessorJdbc> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ProcessorJdbc::getCaseId, caseID)
-		.eq(ProcessorJdbc::getProcessorType,"9");
-		return jdbcProcess.list(queryWrapper);
+	public List<JdbcProcessor> getPreJdbc(int caseID) {
+		List<JdbcProcessor> list=new ArrayList<JdbcProcessor>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		
+		
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PreExtract")) {
+				PreProcessors pre=(PreProcessors) JSONObject.toBean(json, PreProcessors.class);
+				list=pre.getJdbcPreProcessor();
+				break;
+			}
+		}
+		return list;
+		
+	}
+	public List<JdbcProcessor> getPostJdbc(int caseID) {
+		List<JdbcProcessor> list=new ArrayList<JdbcProcessor>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PostExtract")) {
+				PostProcessors pre=(PostProcessors) JSONObject.toBean(json, PostProcessors.class);
+				list=pre.getJdbcPostProcessor();
+				break;
+			}
+		}
+		return list;
 		
 	}
 	public List<ApiMock> getPreMock(int caseID) {
-		QueryWrapper<ApiMock> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiMock::getCaseId, caseID);
-		return mockData.list(queryWrapper);
+		List<Integer> list=new ArrayList<Integer>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PostExtract")) {
+				PreProcessors pre=(PreProcessors) JSONObject.toBean(json, PreProcessors.class);
+				list=pre.getPreMockIds();
+				break;
+			}
+		}
+		QueryWrapper<ApiMock> mockqrapper = new QueryWrapper<>();
+		mockqrapper.lambda().in(ApiMock::getId, list);
+		return mockData.list(mockqrapper);
 		
 	}
-	public List<ProcessorJson> getPostJson(int caseID) {
-		QueryWrapper<ProcessorJson> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ProcessorJson::getCaseId, caseID);
-		return jsonServer.list(queryWrapper);
+	public List<JsonExtractor> getPostJson(int caseID) {
+		List<JsonExtractor> list=new ArrayList<JsonExtractor>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("PostExtract")) {
+				PostProcessors pre=(PostProcessors) JSONObject.toBean(json, PostProcessors.class);
+				list=pre.getJsonExtractor();
+				break;
+			}
+		}
+		
+		
+		return list;
 		
 	}
-	public List<AssertJson> getAssertJson(int caseID) {
-		QueryWrapper<AssertJson> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(AssertJson::getCaseId, caseID);
-		return assertJson.list(queryWrapper);
+	public List<JsonAssertion> getAssertJson(int caseID) {
+		
+		
+		List<JsonAssertion> list=new ArrayList<JsonAssertion>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("Assertions")) {
+				AssertEntity pre=(AssertEntity) JSONObject.toBean(json, AssertEntity.class);
+				list=pre.getJsonAssertion();
+				break;
+			}
+		}
+		
+		return list;
 		
 	}
-	public List<AssertResponse> getResponse(int caseID) {
-		QueryWrapper<AssertResponse> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(AssertResponse::getCaseId, caseID);
-		return assertRes.list(queryWrapper);
+	public List<ResponseAssertion> getResponse(int caseID) {
+		List<ResponseAssertion> list=new ArrayList<ResponseAssertion>();
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, caseID);
+		ArrayList<Object> tree=httpServer.getOne(queryWrapper).getHashtree();
+		for(Object item:tree){
+			JSONObject json = JSONObject.fromObject(item);
+			if(json.getString("type").equals("Assertions")) {
+				AssertEntity pre=(AssertEntity) JSONObject.toBean(json, AssertEntity.class);
+				list=pre.getResponseAssertion();
+				break;
+			}
+		}
+		return list;
 		
 	}
 	

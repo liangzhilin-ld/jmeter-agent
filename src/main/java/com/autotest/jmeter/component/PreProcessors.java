@@ -5,12 +5,11 @@ import org.apache.jmeter.modifiers.BeanShellPreProcessor;
 import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
-
-import com.autotest.data.mode.ProcessorJdbc;
+import com.autotest.data.mode.processors.JdbcProcessor;
 
 public class PreProcessors {
 
-	   public static JDBCPreProcessor jdbcPreProcessor(ProcessorJdbc preJdbc) {
+	   public static JDBCPreProcessor jdbcPreProcessor(JdbcProcessor preJdbc) {
 		   JDBCPreProcessor jdbcPre=new JDBCPreProcessor();
 		   jdbcPre.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
 		   jdbcPre.setProperty(TestElement.TEST_CLASS,JDBCPreProcessor.class.getName());

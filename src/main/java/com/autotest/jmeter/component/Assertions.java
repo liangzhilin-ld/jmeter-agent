@@ -11,8 +11,7 @@ import org.apache.jmeter.assertions.gui.BeanShellAssertionGui;
 import org.apache.jmeter.assertions.gui.JSONPathAssertionGui;
 import org.apache.jmeter.testelement.TestElement;
 
-import com.autotest.data.mode.AssertJson;
-import com.autotest.data.mode.AssertResponse;
+import com.autotest.data.mode.assertions.*;
 import com.autotest.jmeter.entity.assertion.*;
 
 import cn.hutool.json.JSONUtil;
@@ -98,7 +97,7 @@ public class Assertions {
 		 return resAssert;
 	 }
 	 
-	 public static ResponseAssertion responseAssertion(AssertResponse ra) {
+	 public static ResponseAssertion responseAssertion(com.autotest.data.mode.assertions.ResponseAssertion ra) {
 		 
 		 ResponseAssertion resAssert=new ResponseAssertion();
 		 resAssert.setProperty(TestElement.GUI_CLASS,AssertionGui.class.getName());
@@ -179,7 +178,7 @@ public class Assertions {
 		 return resAssert;
 	 }
 
-	 public static JSONPathAssertion jsonPathAssertion(AssertJson jsAssert) {
+	 public static JSONPathAssertion jsonPathAssertion(JsonAssertion jsAssert) {
 		 
 		 JSONPathAssertion jsonAssert=new JSONPathAssertion();
 		 jsonAssert.setProperty(TestElement.GUI_CLASS,JSONPathAssertionGui.class.getName());

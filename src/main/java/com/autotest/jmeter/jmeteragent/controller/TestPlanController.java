@@ -8,24 +8,24 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autotest.data.mapper.ApiHeaderMapper;
 import com.autotest.data.mapper.ApiSwaggerMapper;
 import com.autotest.data.mapper.ApiTestcaseMapper;
 import com.autotest.data.mapper.SyetemDbMapper;
 import com.autotest.data.mapper.TheadGroupConfigMapper;
-import com.autotest.data.mode.ApiHeader;
 import com.autotest.data.mode.ApiReport;
 import com.autotest.data.mode.ApiSwagger;
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.HttpTestcase;
+//import com.autotest.data.mode.ApiTestcase2;
 import com.autotest.data.mode.TestScheduled;
 import com.autotest.data.mode.TheadGroupConfig;
-import com.autotest.data.mode.UserDefinedVariable;
 //import com.techstar.dmp.jmeteragent.bean.Response;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
 import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
@@ -132,7 +132,7 @@ public class TestPlanController {
 
 	@ApiOperation(value = "接口调试")
 	@RequestMapping(value = "/startDebug", method = RequestMethod.POST)
-	public ApiReport debug(@RequestParam(value = "envId", required = true) int envId,@RequestBody ApiTestcase api) {
+	public ApiReport debug(@RequestParam(value = "envId", required = true) int envId,@RequestBody HttpTestcase api) {
 		
 		try {
 			long startTime = System.currentTimeMillis();
@@ -153,23 +153,25 @@ public class TestPlanController {
 	}
 
 	private @Autowired TestDataServiceImpl testData;
-	
+//	
 //	@ApiOperation(value = "数据库调试")
-//	@RequestMapping(value = "/getDtest", method = RequestMethod.GET)
-//	public List<ApiHeader> getDtest() {
-//
+//	@PostMapping("addDtest")
+	//@RequestMapping(value = "/getDtest", method = RequestMethod.POST)
+//	public ApiTestcase2 addDtest(@RequestBody ApiTestcase2 api) {
+//		return testData.saveTestCase2(api);
+		
 //		Wrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-//		// theadGroup.selectList(queryWrapper);
-//
-////		System.out.println(systemDbMapper.);
-//		//testcaseMapper.selectList(queryWrapper);
-//		List<ApiHeader> headers=testData.getApiHeader();
-////		Map<String, String> headerMap=new HashMap<String, String>();
-////		for (ApiHeader apiHeader : headers) {
-////			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
-////		}
+		// theadGroup.selectList(queryWrapper);
+
+//		System.out.println(systemDbMapper.);
+		//testcaseMapper.selectList(queryWrapper);
+		
+//		Map<String, String> headerMap=new HashMap<String, String>();
+//		for (ApiHeader apiHeader : headers) {
+//			headerMap.put(apiHeader.getKey(), apiHeader.getValue());
+//		}
 //		Map<String, String> headerMap=testData.getTestPlanHeader(1);
-////        return testcaseMapper.selectList(queryWrapper);
+//        return testcaseMapper.selectList(queryWrapper);
 //		return headers;
 //	}
 }

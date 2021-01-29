@@ -11,7 +11,6 @@ import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.config.JdbcDataSet;
 import org.apache.jmeter.config.gui.ArgumentsPanel;
-import org.apache.jmeter.engine.StandardJMeterEngine;
 import org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui;
 import org.apache.jmeter.protocol.http.control.CacheManager;
 import org.apache.jmeter.protocol.http.control.CookieManager;
@@ -22,19 +21,14 @@ import org.apache.jmeter.protocol.http.gui.CookiePanel;
 import org.apache.jmeter.protocol.http.gui.HeaderPanel;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.protocol.jdbc.config.DataSourceElement;
-import org.apache.jmeter.testbeans.TestBeanHelper;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.CollectionProperty;
-import org.apache.jmeter.testelement.property.TestElementProperty;
-import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jorphan.collections.SearchByClass;
 
-import com.autotest.data.mode.ApiHeader;
+import com.autotest.data.mode.confelement.ApiHeader;
 import com.autotest.data.mode.ProjectManage;
 import com.autotest.data.mode.SyetemDb;
-import com.autotest.data.mode.UserDefinedVariable;
+import com.autotest.data.mode.confelement.UserDefinedVariable;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -83,7 +77,7 @@ public class ConfigElement {
 //        }
         return headerManager;
     }
-    public static HeaderManager createHeaderManager(List<ApiHeader> headers) {
+    public static HeaderManager createHeaderManager(List<com.autotest.data.mode.confelement.ApiHeader> headers) {
     	HeaderManager headerManager = new HeaderManager();
         headerManager.setProperty(TestElement.GUI_CLASS, HeaderPanel.class.getName());
         headerManager.setProperty(TestElement.NAME, "HTTP HeaderManager");

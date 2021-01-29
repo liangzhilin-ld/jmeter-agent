@@ -1,6 +1,7 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
 import com.autotest.data.mode.ApiTestcase;
+import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.TestScheduled;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
 //import com.autotest.jmeter.jmeteragent.config.TestPlanCreator;
@@ -44,7 +45,7 @@ public class TestPlanServiceImpl implements TestPlanService{
 	@Override
 	
 	public Boolean reTryTestPlan(TestScheduled trig) throws URISyntaxException{
-		List<ApiTestcase> failedList=testData.getTestcaseOfFail(trig.getHistoryId());
+		List<HttpTestcase> failedList=testData.getTestcaseOfFail(trig.getHistoryId());
 		if(failedList.size()==0)
 			return false;
 		HashTree testPlanTree=testPlan.reTryTest(trig,failedList);
@@ -54,7 +55,7 @@ public class TestPlanServiceImpl implements TestPlanService{
 	}
 	
 	@Override
-	public void debugTestCase(ApiTestcase api,int envId) {
+	public void debugTestCase(HttpTestcase api,int envId) {
 		log.info("创建测试计划树");
 		
 //		TestPlanCreator testPlanCreator = new TestPlanCreator(jmeterProperties,jsonString);

@@ -26,8 +26,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autotest.data.mapper.ApiReportMapper;
 import com.autotest.data.mode.*;
-import com.autotest.data.service.impl.ApiHeaderServiceImpl;
-import com.autotest.data.service.impl.UserDefinedVariableServiceImpl;
+import com.autotest.data.mode.assertions.JsonAssertion;
+import com.autotest.data.mode.assertions.ResponseAssertion;
+import com.autotest.data.mode.confelement.ApiHeader;
+import com.autotest.data.mode.confelement.UserDefinedVariable;
+import com.autotest.data.mode.custom.BeanShell;
+import com.autotest.data.mode.processors.JdbcProcessor;
+import com.autotest.data.mode.processors.JsonExtractor;
+import com.autotest.data.service.impl.HttpTestcaseServiceImpl;
+import com.autotest.data.service.impl.ProjectManageServiceImpl;
 import com.autotest.jmeter.component.Assertions;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
@@ -50,8 +57,9 @@ import lombok.extern.apachecommons.CommonsLog;
 @Transactional(rollbackFor=Exception.class)
 public class JmeterHashTreeServiceImpl {
 	private @Autowired TestDataServiceImpl testDadaService;
-	private @Autowired UserDefinedVariableServiceImpl userDefinedVar;
-	private @Autowired ApiHeaderServiceImpl apiHeader;
+	private @Autowired HttpTestcaseServiceImpl httpServer;
+	private @Autowired  ProjectManageServiceImpl projectManage;
+//	private @Autowired ApiHeaderServiceImpl apiHeader;
 	private Map<String, String> header=new HashMap();
 	
 //	private void createConfig(TestScheduled trig) {
@@ -78,7 +86,7 @@ public class JmeterHashTreeServiceImpl {
 	public Arguments getPubArguments(TestScheduled trig) {		
 	   	 //自定义变量
 		String cid=trig.getTcCaseids().split(",")[0];
-		ApiTestcase testcase = testDadaService.getTestcaseByID(cid);
+		HttpTestcase testcase = testDadaService.getTestcaseByID(cid);
 		List<UserDefinedVariable> udvs=testDadaService.getArgumentsByPid(testcase.getProjectId());
 //		List<UserDefinedVariable> definedVars=udvs.stream()
 //				.filter(u -> u.getCaseId().equals(-1))
@@ -116,11 +124,16 @@ public class JmeterHashTreeServiceImpl {
 	 * @param trig
 	 * @return
 	 */
-	private void addArguments(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
-		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, api.getCaseId())
-							 .eq(UserDefinedVariable::getProjectId, api.getProjectId());
-		List<UserDefinedVariable> definedVars=userDefinedVar.list(queryWrapper);
+	private void addArguments(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,HttpTestcase api) {
+//		QueryWrapper<UserDefinedVariable> queryWrapper = new QueryWrapper<>();
+//		queryWrapper.lambda().eq(UserDefinedVariable::getCaseId, api.getCaseId())
+//							 .eq(UserDefinedVariable::getProjectId, api.getProjectId());
+		
+		
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getCaseId, api.getCaseId())
+		 .eq(HttpTestcase::getProjectId, api.getProjectId());
+		List<UserDefinedVariable> definedVars=httpServer.getOne(queryWrapper).getArguments();
 		if(definedVars.size()>0) {
 			Arguments args=ConfigElement.createArguments2(definedVars);
 			testApiTree.add(sampler,args);
@@ -134,12 +147,13 @@ public class JmeterHashTreeServiceImpl {
 	 */
 	public List<ApiHeader> getPubHeader(TestScheduled trig) {
 		String cid=trig.getTcCaseids().split(",")[0];
-		ApiTestcase testcase = testDadaService.getTestcaseByID(cid);
-		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiHeader::getProjectId, testcase.getProjectId())
-							 .eq(ApiHeader::getCaseId,-1);
-		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
-	    return apiHeaders;
+		HttpTestcase testcase = testDadaService.getTestcaseByID(cid);
+		
+		QueryWrapper<ProjectManage> queryWrapper=new QueryWrapper<ProjectManage>();
+		queryWrapper.lambda().eq(ProjectManage::getProjectId, testcase.getProjectId())
+							 .select(ProjectManage::getHeaders);
+		List<ApiHeader> headers=projectManage.getOne(queryWrapper).getHeaders();
+	    return headers;
 	}
 	
 	/**
@@ -148,12 +162,12 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler   TechstarHTTPSamplerProxy对象
 	 * @param api 用例
 	 */
-	private void addHeader(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addHeader(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,HttpTestcase api) {
 //		ApiTestcase testcase = testDadaService.getTestcaseByID(String.valueOf(caseId));
-		QueryWrapper<ApiHeader> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiHeader::getProjectId, api.getProjectId())
-							 .eq(ApiHeader::getCaseId,api.getCaseId());
-		List<ApiHeader> apiHeaders=apiHeader.list(queryWrapper);
+		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(HttpTestcase::getProjectId, api.getProjectId())
+							 .eq(HttpTestcase::getCaseId,api.getCaseId());
+		List<ApiHeader> apiHeaders=httpServer.getOne(queryWrapper).getHeaders();
 		if(apiHeaders.size()>0) {
 			HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
 			testApiTree.add(sampler,apiHeader);
@@ -166,7 +180,10 @@ public class JmeterHashTreeServiceImpl {
 	 * @param threadGroup
 	 * @param api
 	 */
-	private void addMockSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
+	private void addMockSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,HttpTestcase api) {
+		
+		
+		
 		List<ApiMock> preMock=testDadaService.getPreMock(api.getCaseId());
 		if (preMock.size()>0) {
 			for (ApiMock apiMock : preMock) {
@@ -183,13 +200,15 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	private void addPreProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
+	private void addPreProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,HttpTestcase api) {
 		
-		List<Beanshell> shell=testDadaService.getPreBeanshell(api.getCaseId());
+		List<BeanShell> shell=testDadaService.getPreBeanshell(api.getCaseId());
+		
 		if (shell.size()>0)
 			shell.forEach(item->testApiTree.add(sampler,PreProcessors.beanShellPreProcessor(item.getScript())));
 		
-		List<ProcessorJdbc> preJdbc=testDadaService.getPreJdbc(api.getCaseId());
+		
+		List<JdbcProcessor> preJdbc=testDadaService.getPreJdbc(api.getCaseId());
 		if (preJdbc.size()>0)
 			preJdbc.forEach(item->testApiTree.add(sampler,PreProcessors.jdbcPreProcessor(item)));	
 	}
@@ -199,14 +218,14 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	private void addPostProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
-		List<Beanshell> shell=testDadaService.getPostBeanshell(api.getCaseId());
+	private void addPostProcessors(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,HttpTestcase api) {
+		List<BeanShell> shell=testDadaService.getPostBeanshell(api.getCaseId());
 		if (shell.size()>0)
 			shell.forEach(item->testApiTree.add(sampler,PostProcessors.beanShellPostProcessor(item.getScript())));
-		List<ProcessorJdbc> postJdbc=testDadaService.getPostJdbc(api.getCaseId());
+		List<JdbcProcessor> postJdbc=testDadaService.getPostJdbc(api.getCaseId());
 		if (postJdbc.size()>0)
 			postJdbc.forEach(item->testApiTree.add(sampler,PostProcessors.jdbcPostProcessor(item)));	
-		List<ProcessorJson> jsonList=testDadaService.getPostJson(api.getCaseId());
+		List<JsonExtractor> jsonList=testDadaService.getPostJson(api.getCaseId());
 		if (jsonList.size()>0)
 			jsonList.forEach(item->testApiTree.add(sampler,PostProcessors.jsonPostProcessor(item)));
 	}
@@ -217,16 +236,16 @@ public class JmeterHashTreeServiceImpl {
 	 * @param sampler
 	 * @param api
 	 */
-	private void addAssertions(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,ApiTestcase api) {
-		List<AssertJson> assertJsonList=testDadaService.getAssertJson(api.getCaseId());
+	private void addAssertions(ListedHashTree testApiTree,TechstarHTTPSamplerProxy sampler,HttpTestcase api) {
+		List<JsonAssertion> assertJsonList=testDadaService.getAssertJson(api.getCaseId());
 		if (assertJsonList.size()>0)
 			assertJsonList.forEach(item->testApiTree.add(sampler,Assertions.jsonPathAssertion(item)));
 		
-		List<Beanshell> shellList=testDadaService.getAssertBeanshell(api.getCaseId());
+		List<BeanShell> shellList=testDadaService.getAssertBeanshell(api.getCaseId());
 		if (shellList.size()>0)
 			shellList.forEach(item->testApiTree.add(sampler,Assertions.beanShellAssertion(item.getScript())));
 		
-		List<AssertResponse> assertResList=testDadaService.getResponse(api.getCaseId());
+		List<ResponseAssertion> assertResList=testDadaService.getResponse(api.getCaseId());
 		if (assertResList.size()>0)
 			assertResList.forEach(item->testApiTree.add(sampler,Assertions.responseAssertion(item)));
 		
@@ -238,9 +257,11 @@ public class JmeterHashTreeServiceImpl {
 	 * @param threadGroup
 	 * @param api
 	 */
-	private void addParentSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
-		if(StrUtil.isNotEmpty(api.getPreCases())) {
-			ApiTestcase parent=testDadaService.getTestcaseByID(api.getPreCases());
+	private void addParentSampler(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,HttpTestcase api) {
+	
+		List<Integer> ids=testDadaService.getPreCases(api.getCaseId());
+		if(ids.size()>0) {
+			HttpTestcase parent=testDadaService.getTestcaseByID(ids.get(0).toString());
 			addSamplers(threadGroupHashTree,threadGroup,parent);
 		}
 		
@@ -251,7 +272,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param threadGroup
 	 * @param api
 	 */
-	public void addSamplers(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,ApiTestcase api) {
+	public void addSamplers(ListedHashTree threadGroupHashTree,ThreadGroup threadGroup,HttpTestcase api) {
 		log.info("创建http sampler");
 		//header.put("case_id", api.getCaseId().toString());//也可通过comments设置用例ID
 		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
