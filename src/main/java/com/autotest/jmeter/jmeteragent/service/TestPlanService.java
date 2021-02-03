@@ -2,7 +2,6 @@ package com.autotest.jmeter.jmeteragent.service;
 
 import java.net.URISyntaxException;
 
-import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.TestScheduled;
 

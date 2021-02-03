@@ -1,6 +1,5 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
-import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.TestScheduled;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
@@ -26,7 +25,7 @@ public class TestPlanServiceImpl implements TestPlanService{
 	private @Autowired JmeterProperties jmeterProperties;
 	private LoadDispatcher loadDispatcher;
 	private @Autowired TestDataServiceImpl testData;
-	private @Autowired TestPlanCreator2 testPlan;
+	private @Autowired TestPlanCreator testPlan;
 	private static final Logger log = LoggerFactory.getLogger(TestPlanServiceImpl.class);
 	@Override
 	public void startTestPlan(TestScheduled trig) throws URISyntaxException {

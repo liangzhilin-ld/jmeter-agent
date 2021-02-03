@@ -1,6 +1,5 @@
 package com.autotest.jmeter.component;
 
-import org.apache.jmeter.extractor.BeanShellPostProcessor;
 import org.apache.jmeter.modifiers.BeanShellPreProcessor;
 import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;

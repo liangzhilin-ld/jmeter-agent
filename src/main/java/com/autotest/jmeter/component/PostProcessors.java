@@ -1,53 +1,17 @@
 package com.autotest.jmeter.component;
 
-import org.apache.jmeter.assertions.BeanShellAssertion;
-import org.apache.jmeter.assertions.gui.BeanShellAssertionGui;
 import org.apache.jmeter.extractor.BeanShellPostProcessor;
 import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
 import org.apache.jmeter.extractor.json.jsonpath.gui.JSONPostProcessorGui;
 import org.apache.jmeter.protocol.jdbc.processor.JDBCPostProcessor;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jmeter.threads.JMeterVariables;
 import com.autotest.data.mode.processors.JdbcProcessor;
 import com.autotest.data.mode.processors.JsonExtractor;
-import com.autotest.jmeter.entity.processors.JSONExtractor;
+//import com.autotest.jmeter.entity.processors.JSONExtractor;
 
 public class PostProcessors {
-    public static JSONPostProcessor jsonPostProcessor(JSONExtractor jsonExtrator) {
-    	//JMeterContext context = JMeterContextService.getContext();
-    	JSONPostProcessor jsonPost=new JSONPostProcessor();
-    	//jsonPost.setThreadContext(context);
-    	jsonPost.setProperty(TestElement.GUI_CLASS,JSONPostProcessorGui.class.getName());
-    	jsonPost.setProperty(TestElement.TEST_CLASS,JSONPostProcessor.class.getName());
-    	jsonPost.setEnabled(true);
-    	jsonPost.setName(jsonExtrator.getName());//名称
-    	jsonPost.setRefNames(jsonExtrator.getVariableName());//引用名称
-    	jsonPost.setJsonPathExpressions(jsonExtrator.getJsonPath());//表达式
-    	jsonPost.setMatchNumbers(jsonExtrator.getMatchNo());//匹配
-    	jsonPost.setDefaultValues(jsonExtrator.getDefaultValue());//默认值    
-		switch (jsonExtrator.getApplyTo().get("scope")) {
-		 	case "MAIN_AND_SUB":
-		 		jsonPost.setScopeAll();
-		 		break;
-		 	case "SUB":
-		 		jsonPost.setScopeChildren();
-		 		break;
-		 	case "variableName":
-		 		jsonPost.setScopeVariable(jsonExtrator.getApplyTo().get("variableValue"));
-		 		break;
-		 	default:
-		 		jsonPost.setScopeParent(); //Main sample only
-		 		break;
-		 }
-    	//jsonPost.setScopeAll();// 对应提取器的applyTo设置
-    	if(jsonExtrator.isSuffix_ALL())
-    		jsonPost.setComputeConcatenation(true);    	
-    	return jsonPost;
-    }
-    
+ 
     public static JSONPostProcessor jsonPostProcessor(JsonExtractor jsonExtrator) {
     	//JMeterContext context = JMeterContextService.getContext();
     	JSONPostProcessor jsonPost=new JSONPostProcessor();

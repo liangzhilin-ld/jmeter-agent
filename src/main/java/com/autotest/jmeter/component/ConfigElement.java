@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.ConfigTestElement;
@@ -24,12 +23,9 @@ import org.apache.jmeter.protocol.jdbc.config.DataSourceElement;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.CollectionProperty;
-
 import com.autotest.data.mode.confelement.ApiHeader;
-import com.autotest.data.mode.ProjectManage;
 import com.autotest.data.mode.SyetemDb;
 import com.autotest.data.mode.confelement.UserDefinedVariable;
-
 import cn.hutool.core.util.StrUtil;
 
 public class ConfigElement {
@@ -86,8 +82,8 @@ public class ConfigElement {
         if(headers.size()==0)
     		return headerManager;
         for (ApiHeader apiHeader : headers) {
-        	hasAcceptEncoding = hasAcceptEncoding || apiHeader.getKey().equalsIgnoreCase("Accept-Encoding");
-        	headerManager.getHeaders().addItem(new Header(apiHeader.getKey(), apiHeader.getValue()));
+        	hasAcceptEncoding = hasAcceptEncoding || apiHeader.getName().equalsIgnoreCase("Accept-Encoding");
+        	headerManager.getHeaders().addItem(new Header(apiHeader.getName(), apiHeader.getValue()));
 		}
         return headerManager;
     }

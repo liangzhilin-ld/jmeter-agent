@@ -2,39 +2,26 @@ package com.autotest.jmeter.jmeteragent.controller;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autotest.data.mapper.ApiSwaggerMapper;
-import com.autotest.data.mapper.ApiTestcaseMapper;
-import com.autotest.data.mapper.SyetemDbMapper;
-import com.autotest.data.mapper.TheadGroupConfigMapper;
 import com.autotest.data.mode.ApiReport;
-import com.autotest.data.mode.ApiSwagger;
-import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.HttpTestcase;
 //import com.autotest.data.mode.ApiTestcase2;
 import com.autotest.data.mode.TestScheduled;
-import com.autotest.data.mode.TheadGroupConfig;
 //import com.techstar.dmp.jmeteragent.bean.Response;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
 import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestPlanServiceImpl;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-
-import cn.hutool.core.bean.BeanUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 

@@ -1,7 +1,5 @@
 package com.autotest.jmeter.jmeteragent.config;
 
-
-import com.autotest.data.mode.ApiTestcase;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.ThreadGroups;

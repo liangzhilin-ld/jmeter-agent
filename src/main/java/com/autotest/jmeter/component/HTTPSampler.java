@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.jmeter.assertions.BeanShellAssertion;
-import org.apache.jmeter.assertions.ResponseAssertion;
 import org.apache.jmeter.control.OnceOnlyController;
 import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
 import org.apache.jmeter.extractor.json.jsonpath.gui.JSONPostProcessorGui;
@@ -18,12 +17,11 @@ import org.apache.jmeter.protocol.http.util.HTTPArgument;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.ListedHashTree;
-
+import com.autotest.data.mode.assertions.ResponseAssertion;
 import com.autotest.data.mode.ApiMock;
-import com.autotest.data.mode.ApiTestcase;
 import com.autotest.data.mode.HttpTestcase;
-import com.autotest.jmeter.entity.assertion.ResponseAssert;
-import com.autotest.jmeter.entity.processors.JSONExtractor;
+//import com.autotest.jmeter.entity.assertion.ResponseAssert;
+import com.autotest.data.mode.processors.JsonExtractor;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -136,7 +134,7 @@ public class HTTPSampler {
         ListedHashTree gHashTree = new ListedHashTree(gSampler);
     	
       //添加后置处理器与断言
-        JSONExtractor jsonpathA=new JSONExtractor();
+        JsonExtractor jsonpathA=new JsonExtractor();
         jsonpathA.setName("JSON Extractor");
         jsonpathA.setVariableName("gdata");
         jsonpathA.setJsonPath("$.data");
@@ -189,16 +187,16 @@ public class HTTPSampler {
         TechstarHTTPSamplerProxy pwSampler=HTTPSampler.crtHTTPSampler(casess,header);
         ListedHashTree pwHashTree = new ListedHashTree(pwSampler);
         
-        jsonpathA=new JSONExtractor();
+        jsonpathA=new JsonExtractor();
         jsonpathA.setVariableName("author");
         jsonpathA.setJsonPath("$.data.access_token");
         jsonpathA.setMatchNo("1");
         jsonpathA.setDefaultValue("null");
         jsonPostProcess=PostProcessors.jsonPostProcessor(jsonpathA);
-        pwHashTree.add(pwSampler, jsonPostProcess); 
-        ResponseAssert ra=new ResponseAssert();
+        pwHashTree.add(pwSampler, jsonPostProcess);
+        ResponseAssertion ra=new ResponseAssertion();
         ra.setTestString(Arrays.asList("认证成功"));
-        ResponseAssertion pwResponse=Assertions.responseAssertion(ra);         
+        org.apache.jmeter.assertions.ResponseAssertion pwResponse=Assertions.responseAssertion(ra);         
         pwHashTree.add(pwSampler, pwResponse); 
         onceControllerTree.add(onceController,gHashTree);
         onceControllerTree.add(onceController,imageHashTree);
