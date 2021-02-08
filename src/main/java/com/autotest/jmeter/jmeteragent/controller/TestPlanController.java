@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.autotest.data.mode.ApiReport;
 import com.autotest.data.mode.HttpTestcase;
+import com.autotest.data.mode.ScenarioTestcase;
 //import com.autotest.data.mode.ApiTestcase2;
 import com.autotest.data.mode.TestScheduled;
 //import com.techstar.dmp.jmeteragent.bean.Response;
@@ -138,7 +139,27 @@ public class TestPlanController {
 		
 		//debugrePonse.getQueue()
 	}
-
+	@ApiOperation(value = "场景调试")
+	@RequestMapping(value = "/debugScenario", method = RequestMethod.POST)
+	public ApiReport debugScenario(@RequestParam(value = "envId", required = true) int envId,@RequestBody ScenarioTestcase api) {
+		
+		try {
+			long startTime = System.currentTimeMillis();
+			testPlanService.debugTestCase(api,envId);
+			ApiReport response=debugrePonse.getQueue();
+			while(response==null) {
+				long dur=System.currentTimeMillis()-startTime;
+				response=debugrePonse.getQueue();
+				if(dur>20000)break;
+			}
+			return response;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+		
+		//debugrePonse.getQueue()
+	}
 	private @Autowired TestDataServiceImpl testData;
 //	
 //	@ApiOperation(value = "数据库调试")

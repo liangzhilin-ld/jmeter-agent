@@ -1473,20 +1473,14 @@ public class LoadDispatcher implements JMeterPlugin {
             	//重试机制
             	retryCount=retryCount+1;
             	if(retryCount<=job.getRetry()) {
-            		Boolean isTry=((TestPlanServiceImpl) SpringContextUtil
-            				.getBean("testPlanServiceImpl"))
-            				.reTryTestPlan(job);
+            		Boolean isTry=SpringContextUtil.getBean(TestPlanServiceImpl.class).reTryTestPlan(job);
             		if(!isTry) {
             			retryCount=0;
-            			((TestDataServiceImpl) SpringContextUtil
-            					.getBean("testDataServiceImpl"))
-            					.updateHistoryListTable(job);
+            			SpringContextUtil.getBean(TestDataServiceImpl.class).updateHistoryListTable(job);
             		}
             	}else {
             		retryCount=0;
-            		((TestDataServiceImpl) SpringContextUtil
-            				.getBean("testDataServiceImpl"))
-            				.updateHistoryListTable(job);
+            		SpringContextUtil.getBean(TestDataServiceImpl.class).updateHistoryListTable(job);
             	}
 			} catch (URISyntaxException e) {
 				// TODO Auto-generated catch block

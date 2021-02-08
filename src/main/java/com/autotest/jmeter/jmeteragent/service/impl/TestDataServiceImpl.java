@@ -154,7 +154,7 @@ public class TestDataServiceImpl {
 	 * @return
 	 */
 	public List<HttpTestcase> getTestcaseByIds(TestScheduled trig) {		
-		List<Integer> idList=trig.getTcCaseids().get("samplerIds");
+		List<Integer> idList=trig.getTcCaseids().get(TestScheduled.TYPE_SAMPLER);
 		if(idList.size()==0||idList==null)
 			return getTestcase();
 		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
@@ -162,8 +162,13 @@ public class TestDataServiceImpl {
 		return httpServer.list(queryWrapper);
 	}
 	
+	public ScenarioTestcase getScenariosByid(int id) {		
+
+		return scenarioServer.getById(id);
+	}
+	
 	public List<ScenarioTestcase> getScenarios(TestScheduled trig) {		
-		List<Integer> idList=trig.getTcCaseids().get("scenarioIds");
+		List<Integer> idList=trig.getTcCaseids().get(TestScheduled.TYPE_SCENARIO);
 		if(idList.size()==0||idList==null)
 			return new ArrayList<ScenarioTestcase>();
 		QueryWrapper<ScenarioTestcase> queryWrapper = new QueryWrapper<>();
@@ -176,18 +181,19 @@ public class TestDataServiceImpl {
 	 * @param trig
 	 * @return
 	 */
-	public ScenarioTestcase getLoginScenarios(TestScheduled trig) {		
-		List<Integer> idList=trig.getTcCaseids().get("scenarioIds");
-		if(idList.size()==0||idList==null)
-			return null;
-		QueryWrapper<ScenarioTestcase> queryWrapper1 = new QueryWrapper<>();
-		queryWrapper1.lambda().eq(ScenarioTestcase::getId, idList.get(0));
-		String pid=scenarioServer.getOne(queryWrapper1).getProjectId();
+	public ScenarioTestcase getLoginScenarios(Integer pid) {		
+//		List<Integer> idList=trig.getTcCaseids().get("scenarioIds");
+//		if(idList.size()==0||idList==null)
+//			return null;
+//		QueryWrapper<ScenarioTestcase> queryWrapper1 = new QueryWrapper<>();
+//		queryWrapper1.lambda().eq(ScenarioTestcase::getId, idList.get(0));
+//		String pid=scenarioServer.getOne(queryWrapper1).getProjectId();
 		QueryWrapper<ScenarioTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ScenarioTestcase::getTag, "登陆")
 							 .eq(ScenarioTestcase::getProjectId, pid);
 		return scenarioServer.getOne(queryWrapper, false);
 	}
+	
 	/**
 	 * 查询用户自定义变量
 	 * @param projectID 项目编号

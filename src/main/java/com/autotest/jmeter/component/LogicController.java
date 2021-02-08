@@ -69,7 +69,7 @@ public class LogicController {
     	ifController.setEnabled(true);
     	ifController.setProperty(new StringProperty(TestElement.TEST_CLASS, IfController.class.getName()));
     	ifController.setProperty(new StringProperty(TestElement.GUI_CLASS, IfControllerPanel.class.getName())); 
-    	ifController.setName("If Controller");
+    	ifController.setName("如果（If）控制器");
     	ifController.setComment("");
     	ifController.setCondition(condition);
     	ifController.setUseExpression(true);

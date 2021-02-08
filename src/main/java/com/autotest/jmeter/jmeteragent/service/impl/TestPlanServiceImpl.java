@@ -54,7 +54,7 @@ public class TestPlanServiceImpl implements TestPlanService{
 	}
 	
 	@Override
-	public void debugTestCase(HttpTestcase api,int envId) {
+	public <T> void debugTestCase(T api,int envId) {
 		log.info("创建测试计划树");
 		
 //		TestPlanCreator testPlanCreator = new TestPlanCreator(jmeterProperties,jsonString);
