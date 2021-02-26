@@ -4,6 +4,7 @@ package com.autotest.jmeter.jmeteragent.service.impl;
 import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.ScenarioTestcase;
 import com.autotest.data.mode.TestScheduled;
+import com.autotest.data.mode.custom.SamplerLable;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.Listener;
@@ -44,6 +45,7 @@ import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
 import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.TestPlan;
+import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.extractor.BeanShellPostProcessor;
 import org.apache.jmeter.modifiers.BeanShellPreProcessor;
 import org.apache.jmeter.threads.ThreadGroup;
@@ -90,7 +92,7 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(jmeterCompant.getPubHeader(trig)));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
-        testPlanTree.add(testPlan,Listener.backendListener("123", "2342344", "test"));
+        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), "debug"));
         log.info("创建线程组");
         int threadNum=trig.getNumOfConcurrent();//并发数判断
    
@@ -157,7 +159,13 @@ public class TestPlanCreator {
         return threadGroupHashTree;
     }
     public ListedHashTree creatTransactionControllerTree(ScenarioTestcase tc) {
-    	TransactionController tsController=LogicController.transactionController(tc.getScenarioName());
+    	SamplerLable transLable=new SamplerLable();
+    	transLable.setCaseId(tc.getId().toString());
+    	transLable.setSuiteId(tc.getSuiteId().toString());
+    	transLable.setCaseName(tc.getScenarioName());
+    	if(tc.getTag().equals("登陆"))transLable.setIsLogin(true);
+    	
+    	TransactionController tsController=LogicController.transactionController(JSON.toJSONString(transLable));
 		ListedHashTree tcControllerTree=new ListedHashTree(tsController); 
 		ArrayList<JSONObject> listObj=tc.getHashtree();
 		if(listObj.size()==0)return tcControllerTree;
@@ -165,7 +173,7 @@ public class TestPlanCreator {
 			String type=json.getString("type");
 			if(type.contains(ScenarioTestcase.TYPE_HTTP_SAMPLER)) {
 				HttpTestcase htc=testData.getTestcaseByID(json.getInteger("id"));
-				if(tc.getTag().equals("登陆"))htc.setTag(ScenarioTestcase.LOGIN_SIGN);
+				
 				jmeterCompant.addSamplers(tcControllerTree, tsController, htc);
 				continue;
 			}

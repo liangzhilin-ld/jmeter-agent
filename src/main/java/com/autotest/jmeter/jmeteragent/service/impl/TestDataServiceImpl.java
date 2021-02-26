@@ -14,6 +14,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.autotest.data.mode.*;
 import com.autotest.data.mode.confelement.ApiHeader;
 import com.autotest.data.mode.confelement.UserDefinedVariable;
+import com.autotest.data.mode.custom.SamplerReport;
 import com.autotest.data.service.impl.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -41,7 +42,10 @@ public class TestDataServiceImpl {
 	private @Autowired ApiMockServiceImpl mockData;
 	private @Autowired SyetemEnvServiceImpl envServer;
 	private @Autowired  ScenarioTestcaseServiceImpl scenarioServer;
-
+	private @Autowired  ScenarioReportServiceImpl reportServer;
+	public Boolean saveReport(ScenarioReport entiy) {
+		return reportServer.save(entiy);
+	}
 	public List<ApiHeader> getSamplerHeader(int caseId) {
 		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(HttpTestcase::getCaseId,caseId);

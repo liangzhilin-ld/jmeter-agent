@@ -245,8 +245,8 @@ public class JmeterHashTreeServiceImpl {
 		log.info("创建http sampler");
 		//header.put("case_id", api.getCaseId().toString());//也可通过comments设置用例ID
 		TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
-		if(!api.getTag().equals("ScenarioLogin"))
-			sampler.setComment(api.getCaseId().toString()+"||"+api.getSuiteName());
+//		if(!api.getTag().equals(ScenarioTestcase.LOGIN_SIGN))
+//			sampler.setComment(api.getCaseId().toString()+"||"+api.getSuiteName());
     	ListedHashTree testApiTree = new ListedHashTree(sampler);
     	//header,用户自定义变量，前置，后置，断言查询并解析
     	log.info("header添加");

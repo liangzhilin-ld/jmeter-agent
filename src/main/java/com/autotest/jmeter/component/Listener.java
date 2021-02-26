@@ -47,16 +47,16 @@ public class Listener {
      * @param runMode
      * @return
      */
-    public static BackendListener backendListener(String testId, String debugReportId, String runMode) {
+    public static BackendListener backendListener(String jobid, String historyId, String runMode) {
         BackendListener backendListener = new BackendListener();
-        backendListener.setName(testId);
+        backendListener.setName(jobid);
         Arguments arguments = new Arguments();
-        arguments.addArgument(APIBackendListenerClient.TEST_ID, testId);
+        arguments.addArgument(APIBackendListenerClient.JOB_ID, jobid);
         if (StringUtils.isNotBlank(runMode)) {
             arguments.addArgument("runMode", runMode);
         }
-        if (StringUtils.isNotBlank(debugReportId)) {
-            arguments.addArgument("debugReportId", debugReportId);
+        if (StringUtils.isNotBlank(historyId)) {
+            arguments.addArgument("historyId", historyId);
         }
         backendListener.setArguments(arguments);
         backendListener.setClassname(APIBackendListenerClient.class.getCanonicalName());

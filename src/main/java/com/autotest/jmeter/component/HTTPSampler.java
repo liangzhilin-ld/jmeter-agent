@@ -18,8 +18,12 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.ListedHashTree;
 import com.autotest.data.mode.assertions.ResponseAssertion;
+import com.autotest.data.mode.custom.SamplerLable;
+import com.alibaba.fastjson.JSON;
+import com.autotest.data.enums.ApiParam;
 import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.HttpTestcase;
+import com.autotest.data.mode.ScenarioTestcase;
 //import com.autotest.jmeter.entity.assertion.ResponseAssert;
 import com.autotest.data.mode.processors.JsonExtractor;
 import cn.hutool.core.util.StrUtil;
@@ -64,8 +68,16 @@ public class HTTPSampler {
      * @return
      */
     public static TechstarHTTPSamplerProxy crtHTTPSampler(HttpTestcase testApi,Map<String, String> header) {
+//        SamplerLable lable=new SamplerLable();
+//        lable.setCaseName(testApi.getApiName());
+//        lable.setCaseId(testApi.getCaseId().toString());
+//        lable.setSuiteId(testApi.getSuiteId().toString());
+        header.put(ApiParam.CASE_ID.name(), testApi.getCaseId().toString());
+        header.put(ApiParam.SUITE_Id.name(), testApi.getSuiteId().toString());
+        
     	TechstarHTTPSamplerProxy httpSampler = new TechstarHTTPSamplerProxy(HTTPSamplerFactory.DEFAULT_CLASSNAME);
-        httpSampler.setName(testApi.getApiUri());
+        httpSampler.setName(testApi.getApiName());//JSON.toJSONString(lable)
+        
         HeaderManager headerManager=ConfigElement.createHeaderManager(header);
 //        headerManager.setProperty("Content-Type", "multipart/form-data");
 //        httpSampler.setDomain("uttesh.com");
