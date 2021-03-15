@@ -50,6 +50,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -142,11 +143,10 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     	SamplerReport single=new SamplerReport();
     	List<SamplerReport> listsam=new ArrayList<SamplerReport>();
     	String caseName=sampleResults.getSampleLabel();
-    	SamplerLable data = JSON.parseObject(caseName, SamplerLable.class);
     	Boolean isScenaro=sampleResults.getResponseMessage().startsWith("Number of samples in transaction");
+    	SampleResult[] sub=sampleResults.getSubResults();
     	if(isScenaro) {
-    		
-    		SampleResult[] sub=sampleResults.getSubResults();
+    		SamplerLable data = JSON.parseObject(caseName, SamplerLable.class);
         	if(data.getIsLogin()&&sampleResults.isSuccessful())
         		return;
         	if(sub.length>0){
@@ -165,12 +165,13 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         			for(AssertionResult assR:sub[i].getAssertionResults()){
         				if(!assR.isFailure())
         					listAssert.add(assR.getName()+"|"+assR.getFailureMessage());
-        			}
+        			} 
         			single.setTcAssert(listAssert);
         			listsam.add(single);
         			report.setTcName(data.getCaseName());
         			report.setTcId(data.getCaseId());
         			report.setTcSuite(data.getSuiteId().toString());
+        			report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
     			}
         	}
     	}else {
@@ -186,10 +187,17 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 					listAssert.add(assR.getName()+"|"+assR.getFailureMessage());
 			}
 			single.setTcAssert(listAssert);
+			
+			single.setCaseId(getHeaderKey("CASE_ID:(.+)",single.getTcHeader()));
+			
+			single.setTcSuite(getHeaderKey("SUITE_Id:(.+)",single.getTcHeader()));
+			single.setIsSuccess(sampleResults.isSuccessful());
+			single.setJobId(this.jobId);
+			single.setTcDuration(String.valueOf(sampleResults.getLatency()));
 			listsam.add(single);
 			report.setTcName(caseName);
-			report.setTcId(getHeaderKey("CASE_ID:(.+)",single.getTcRequest()));
-			report.setTcSuite(getHeaderKey("SUITE_Id:(.+)",single.getTcRequest()));
+			report.setTcId(single.getCaseId());
+			report.setTcSuite(single.getTcSuite());
     	}
 		report.setHashtree(listsam);
 //		report.setTcName(data.getCaseName());
@@ -203,13 +211,15 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 		report.setProjectId(0);
 		
 		if(isScenaro)report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
-		SpringContextUtil.getBean(TestDataServiceImpl.class).saveReport(report);
+//		if(report.getId()==null)report.setId(1);
+		SpringContextUtil.getBean(TestDataServiceImpl.class).updateReport(report);
     }
     
     public String getHeaderKey(String pattern,String content) {
-    	if(!(content.length()>0))
-    		return "";
+    	
     	String value=ReUtil.get(pattern, content, 1);
+    	if(value==null||!(content.length()>0))
+    		return "";
     	BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(value.getBytes())));
     	try {
     		value=br.readLine().toString().trim();

@@ -68,11 +68,6 @@ public final class TechstarHTTPSamplerProxy extends HTTPSamplerBase implements I
 				return errorResult(ex, new HTTPSampleResult());
 			}
 		}
-		//执行结果写入数据库
-		SpringContextUtil.getBean(JmeterHashTreeServiceImpl.class)
-						 .writeSamplers(
-								 impl.sample(u, method, areFollowingRedirect, depth)
-								 );
 		//调试信息
 //		System.out.println("--------------请求内容---------------------------");
 //		System.out.println(impl.sample(u, method, areFollowingRedirect, depth).getSamplerData());

@@ -43,8 +43,26 @@ public class TestDataServiceImpl {
 	private @Autowired SyetemEnvServiceImpl envServer;
 	private @Autowired  ScenarioTestcaseServiceImpl scenarioServer;
 	private @Autowired  ScenarioReportServiceImpl reportServer;
-	public Boolean saveReport(ScenarioReport entiy) {
-		return reportServer.save(entiy);
+	
+	public Boolean addReport(ScenarioReport report) {
+		return reportServer.save(report);
+	}
+	public Boolean updateReport(ScenarioReport report) {
+		UpdateWrapper<ScenarioReport> updateWrapper = new UpdateWrapper<>();
+		updateWrapper.lambda().set(ScenarioReport::getTcSuite, report.getTcSuite())
+							.set(ScenarioReport::getTcName, report.getTcName())
+							.set(ScenarioReport::getTcResult, report.getTcResult())
+							.set(ScenarioReport::getTcDuration, report.getTcDuration())
+							.set(ScenarioReport::getTcName, report.getTcName())
+							.set(ScenarioReport::getHashtree, JSONArray.toJSONString(report.getHashtree()))
+							.set(ScenarioReport::getTcSuite, report.getTcSuite())
+							.set(ScenarioReport::getTcResult, report.getTcResult())
+							.set(ScenarioReport::getTcType, report.getTcType())
+							.setSql("TC_RUNS_NUM=TC_RUNS_NUM+1")
+							 .eq(ScenarioReport::getHistoryId, report.getHistoryId())
+							 .eq(ScenarioReport::getJobId, report.getJobId())
+							 .eq(ScenarioReport::getTcId, report.getTcId());
+		return reportServer.update(report, updateWrapper);
 	}
 	public List<ApiHeader> getSamplerHeader(int caseId) {
 		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
@@ -94,7 +112,7 @@ public class TestDataServiceImpl {
 							 .eq(ApiReport::getHistoryId, report.getHistoryId())
 							 .eq(ApiReport::getJobId, report.getJobId())
 							 .eq(ApiReport::getCaseId, report.getCaseId());
-		return apiReport.update(updateWrapper);
+		return apiReport.update(report,updateWrapper);
 	}
 	public List<TheadGroupConfig> getTheadGroupConfig() {
 		return theadGroupConfig.list();
