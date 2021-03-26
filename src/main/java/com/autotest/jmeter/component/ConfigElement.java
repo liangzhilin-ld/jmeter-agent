@@ -24,6 +24,7 @@ import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import com.autotest.data.mode.confelement.ApiHeader;
+import com.alibaba.fastjson.JSONArray;
 import com.autotest.data.mode.SyetemDb;
 import com.autotest.data.mode.confelement.UserDefinedVariable;
 import cn.hutool.core.util.StrUtil;

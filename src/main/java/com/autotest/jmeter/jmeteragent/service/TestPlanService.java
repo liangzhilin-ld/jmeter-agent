@@ -10,7 +10,7 @@ public interface TestPlanService {
 	public void startTestPlan(TestScheduled trig) throws URISyntaxException;
 	
 	public Boolean reTryTestPlan(TestScheduled trig) throws URISyntaxException;
-	public <T> void debugTestCase(T api,int envId);
+	public <T> void debugTestCase(T api,String envId,String testId);
 	//停止测试计划
 	public void stopTestPlan();
 	

@@ -36,11 +36,13 @@ import com.autotest.data.mode.ScenarioReport;
 import com.autotest.data.mode.ScenarioTestcase;
 import com.autotest.data.mode.custom.SamplerLable;
 import com.autotest.data.mode.custom.SamplerReport;
+import com.autotest.jmeter.jmeteragent.service.impl.APIReportService;
 import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.autotest.util.SpringContextUtil;
 
 import cn.hutool.core.util.ReUtil;
+import cn.hutool.json.JSONUtil;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -68,7 +70,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 
 //    private APITestService apiTestService;
 //
-//    private APIReportService apiReportService;
+    private APIReportService apiReportService;
 //
 //    private ApiDefinitionService apiDefinitionService;
 //
@@ -83,7 +85,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     private String jobId;
     public String runMode;
     private String historyId;
-
+    public ScenarioReport report;
     //获得控制台内容
     private PrintStream oldPrintStream = System.out;
     private ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -106,10 +108,10 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 //            LogUtil.error("apiTestService is required");
 //        }
 //
-//        apiReportService = CommonBeanFactory.getBean(APIReportService.class);
-//        if (apiReportService == null) {
-//            LogUtil.error("apiReportService is required");
-//        }
+        apiReportService = SpringContextUtil.getBean(APIReportService.class);
+        if (apiReportService == null) {
+            log.error("apiReportService is required");
+        }
 //        apiDefinitionService = CommonBeanFactory.getBean(ApiDefinitionService.class);
 //        if (apiDefinitionService == null) {
 //            LogUtil.error("apiDefinitionService is required");
@@ -132,6 +134,9 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
         queue.addAll(sampleResults);
         writeSamplers(sampleResults);
+       
+        
+
     }
     @Async
 	private void writeSamplers(List<SampleResult> sampleResults) {
@@ -151,7 +156,8 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         		return;
         	if(sub.length>0){
         		for (int i = 0; i < sub.length; i++) {
-        			single.setCaseId(JSON.parseObject(sub[i].getSampleLabel(), SamplerLable.class).getCaseId());
+        			single.setCaseId(getHeaderKey("CASE_ID:(.+)",sub[i].getRequestHeaders()));
+        			single.setTcSuite(getHeaderKey("SUITE_Id:(.+)",sub[i].getRequestHeaders()));
         			single.setIsSuccess(sub[i].isSuccessful());
         			single.setTcName(sub[i].getSampleLabel());
         			single.setTcDuration(String.valueOf(sub[i].getLatency()));
@@ -160,6 +166,8 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     					  	 "Response message: "+sub[i].getResponseMessage();
         			single.setTcLog(tcLog);
         			single.setTcRequest(sub[i].getSamplerData());
+//        			Boolean isjson=JSONUtil.isJson(sub[i].getResponseDataAsString());
+//        			cn.hutool.json.JSONObject ff=JSONUtil.parseObj(sub[i].getResponseDataAsString());
         			single.setTcResponse(sub[i].getResponseDataAsString());
         			List<String> listAssert=new ArrayList<String>();
         			for(AssertionResult assR:sub[i].getAssertionResults()){
@@ -208,10 +216,17 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 		report.setTcDuration(String.valueOf(sampleResults.getLatency()));
 		report.setHistoryId(this.historyId);
 		report.setJobId(this.jobId);
-		report.setProjectId(0);
+		report.setProjectId(1);
+		report.setConsole(getConsole());
 		
 		if(isScenaro)report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
 //		if(report.getId()==null)report.setId(1);
+        //调试模式下处理方法，待调试
+        if(this.runMode.equals(ApiRunMode.DEBUG.name())) {
+        	apiReportService.addResult(this.historyId,report);
+        	return;
+        }
+        	
 		SpringContextUtil.getBean(TestDataServiceImpl.class).updateReport(report);
     }
     
@@ -239,9 +254,6 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
           String index = StringUtils.substringAfterLast(result.getThreadName(), THREAD_SPLIT);
           String scenarioId = StringUtils.substringBefore(index, ID_SPLIT);
                   	});
-
-    	System.out.println(getConsole());
-
     	Thread.currentThread().interrupt();
 //        TestResult testResult = new TestResult();
 //        testResult.setTestId(testId);

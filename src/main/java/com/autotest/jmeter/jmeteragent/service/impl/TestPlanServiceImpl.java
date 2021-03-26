@@ -54,12 +54,12 @@ public class TestPlanServiceImpl implements TestPlanService{
 	}
 	
 	@Override
-	public <T> void debugTestCase(T api,int envId) {
+	public <T> void debugTestCase(T api,String envStr,String testId) {
 		log.info("创建测试计划树");
 		
 //		TestPlanCreator testPlanCreator = new TestPlanCreator(jmeterProperties,jsonString);
 //		HashTree testPlanTree = testPlanCreator.create();
-		HashTree testPlanTree=testPlan.createDebug(api,envId);
+		HashTree testPlanTree=testPlan.createDebug(api,envStr,testId);
 		log.info("执行测试");
 		//loadDispatcher=new LoadDispatcher(jmeterProperties,testPlanCreator.getRequestParam().getTestRecordId());
 		loadDispatcher=new LoadDispatcher(jmeterProperties);

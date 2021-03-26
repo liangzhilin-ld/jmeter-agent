@@ -34,7 +34,7 @@ public class TestDataServiceImpl {
 	private @Autowired HttpTestcaseServiceImpl apiTestcase;
 	private @Autowired HttpTestcaseServiceImpl httpServer;
 	private @Autowired TestScheduledServiceImpl testSchedule;
-	private @Autowired ApiReportServiceImpl apiReport;
+	private @Autowired ScenarioReportServiceImpl apiReport;
 	private @Autowired ApiReportHistoryListServiceImpl historyStat;
 	private @Autowired SyetemDictionaryServiceImpl syetemDic;
 	private @Autowired ProjectManageServiceImpl projectManage;
@@ -73,6 +73,9 @@ public class TestDataServiceImpl {
 		QueryWrapper<ProjectManage> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ProjectManage::getProjectId, projectId);
 		List<ApiHeader> apiHeaders=projectManage.getOne(queryWrapper).getHeaders();
+		if(apiHeaders.size()>0) {
+			apiHeaders=(List<ApiHeader>)JSONArray.parseArray(apiHeaders.toString(),ApiHeader.class);
+		}
 	    return apiHeaders;
 	}
 	public SyetemEnv getEnv(int envId) {
@@ -88,7 +91,7 @@ public class TestDataServiceImpl {
 		return testSchedule.list();
 	}
 
-	public List<ApiReport> getApiReport() {
+	public List<ScenarioReport> getApiReport() {
 		return apiReport.list();
 	}
 	/**
@@ -96,27 +99,27 @@ public class TestDataServiceImpl {
 	 * @param report
 	 * @return
 	 */
-	public Boolean updateApiReport(ApiReport report) {
-		UpdateWrapper<ApiReport> updateWrapper = new UpdateWrapper<>();
-		updateWrapper.lambda().set(ApiReport::getTcSuite, report.getTcSuite())
-							.set(ApiReport::getTcName, report.getTcName())
-							.set(ApiReport::getTcResult, report.getTcResult())
-							.set(ApiReport::getTcDuration, report.getTcDuration())
-							.set(ApiReport::getTcHeader, report.getTcHeader())
-							.set(ApiReport::getTcLog, report.getTcLog())
-							.set(ApiReport::getTcRequest, report.getTcRequest())
-							.set(ApiReport::getTcResponse, report.getTcResponse())
-							.set(ApiReport::getTcAssert, report.getTcAssert())
-							.setSql("TC_RUNS_NUM=TC_RUNS_NUM+1")
-							.set(ApiReport::getCreateTime, report.getCreateTime())
-							 .eq(ApiReport::getHistoryId, report.getHistoryId())
-							 .eq(ApiReport::getJobId, report.getJobId())
-							 .eq(ApiReport::getCaseId, report.getCaseId());
-		return apiReport.update(report,updateWrapper);
-	}
-	public List<TheadGroupConfig> getTheadGroupConfig() {
-		return theadGroupConfig.list();
-	}
+//	public Boolean updateApiReport(ApiReport report) {
+//		UpdateWrapper<ApiReport> updateWrapper = new UpdateWrapper<>();
+//		updateWrapper.lambda().set(ApiReport::getTcSuite, report.getTcSuite())
+//							.set(ApiReport::getTcName, report.getTcName())
+//							.set(ApiReport::getTcResult, report.getTcResult())
+//							.set(ApiReport::getTcDuration, report.getTcDuration())
+//							.set(ApiReport::getTcHeader, report.getTcHeader())
+//							.set(ApiReport::getTcLog, report.getTcLog())
+//							.set(ApiReport::getTcRequest, report.getTcRequest())
+//							.set(ApiReport::getTcResponse, report.getTcResponse())
+//							.set(ApiReport::getTcAssert, report.getTcAssert())
+//							.setSql("TC_RUNS_NUM=TC_RUNS_NUM+1")
+//							.set(ApiReport::getCreateTime, report.getCreateTime())
+//							 .eq(ApiReport::getHistoryId, report.getHistoryId())
+//							 .eq(ApiReport::getJobId, report.getJobId())
+//							 .eq(ApiReport::getCaseId, report.getCaseId());
+//		return apiReport.update(report,updateWrapper);
+//	}
+//	public List<TheadGroupConfig> getTheadGroupConfig() {
+//		return theadGroupConfig.list();
+//	}
 	
 	/**
 	 * 更新历史纪录列表数据
@@ -124,17 +127,16 @@ public class TestDataServiceImpl {
 	 * @return
 	 */
 	public Boolean updateHistoryListTable(TestScheduled job) {
-		QueryWrapper<ApiReport> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiReport::getHistoryId,job.getHistoryId())
-							.eq(ApiReport::getJobId,job.getId())
-							.select(ApiReport::getTcResult);
-		List<ApiReport> apiList=apiReport.list(queryWrapper);
-		List<ApiReport> succList=apiList.stream()
+		QueryWrapper<ScenarioReport> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ScenarioReport::getHistoryId,job.getHistoryId())
+							.eq(ScenarioReport::getJobId,job.getId())
+							.select(ScenarioReport::getTcResult);
+		List<ScenarioReport> apiList=apiReport.list(queryWrapper);
+		List<ScenarioReport> succList=apiList.stream()
 				.filter(s -> s.getTcResult().equals(true))
 				.collect(Collectors.toList());
 		UpdateWrapper<ApiReportHistoryList> updateWrapper = new UpdateWrapper<>();
-		updateWrapper.lambda().set(ApiReportHistoryList::getTcTotal, apiList.size())
-		 	.set(ApiReportHistoryList::getTcPassed, succList.size())
+		updateWrapper.lambda().set(ApiReportHistoryList::getTcPassed, succList.size())
 		 	.set(ApiReportHistoryList::getTcFailed, apiList.size()-succList.size())
 		 	.set(ApiReportHistoryList::getEndTime, LocalDateTime.now())
 		 	.eq(ApiReportHistoryList::getId, job.getHistoryId())
@@ -153,15 +155,15 @@ public class TestDataServiceImpl {
 		return apiTestcase.getOne(queryWrapper);
 	}
 	public List<HttpTestcase> getTestcaseOfFail(String history) {
-		QueryWrapper<ApiReport> queryWrapper = new QueryWrapper<>();
-		queryWrapper.lambda().eq(ApiReport::getHistoryId, history)
-							.eq(ApiReport::getTcResult,false)
-							.select(ApiReport::getCaseId);
-		List<ApiReport> ids=apiReport.list(queryWrapper);
+		QueryWrapper<ScenarioReport> queryWrapper = new QueryWrapper<>();
+		queryWrapper.lambda().eq(ScenarioReport::getHistoryId, history)
+							.eq(ScenarioReport::getTcResult,false)
+							.select(ScenarioReport::getTcId);
+		List<ScenarioReport> ids=apiReport.list(queryWrapper);
 		if(ids.size()==0)
 			return new ArrayList<HttpTestcase>();
 		List<Integer> cids = new ArrayList<Integer>();
-		ids.forEach(item->cids.add(item.getCaseId()));
+		ids.forEach(item->cids.add(Integer.parseInt(item.getTcId())));
 		QueryWrapper<HttpTestcase> wrapper = new QueryWrapper<>();
 		wrapper.lambda().in(HttpTestcase::getCaseId, cids);
 		return httpServer.list(wrapper);

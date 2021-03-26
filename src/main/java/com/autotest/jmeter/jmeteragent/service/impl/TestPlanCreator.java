@@ -1,6 +1,7 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
 
+import com.autotest.data.enums.ApiRunMode;
 import com.autotest.data.mode.HttpTestcase;
 import com.autotest.data.mode.ScenarioTestcase;
 import com.autotest.data.mode.TestScheduled;
@@ -92,7 +93,7 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(jmeterCompant.getPubHeader(trig)));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
-        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), "debug"));
+        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
         log.info("创建线程组");
         int threadNum=trig.getNumOfConcurrent();//并发数判断
    
@@ -223,19 +224,20 @@ public class TestPlanCreator {
 	 * @param envId
 	 * @return
 	 */
-	public <T> HashTree createDebug(T api,int envId) {
+	public <T> HashTree createDebug(T api,String envStr,String testId) {
     	TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
         log.info("创建公共配置");
         int projectId=(api instanceof HttpTestcase)
         				?((HttpTestcase)api).getProjectId()
         					:((ScenarioTestcase)api).getProjectId();
-        testPlanTree.add(testPlan, jmeterCompant.getPubArgumentsOfDebug(projectId,envId));
+        testPlanTree.add(testPlan, jmeterCompant.getPubArgumentsOfDebug(projectId,envStr));
         testPlanTree.add(testPlan,ConfigElement.httpDefaultsGui());
         testPlanTree.add(testPlan,ConfigElement.createCookieManager());
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(testData.getPubHeader(projectId)));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
+        testPlanTree.add(testPlan,Listener.backendListener("debug",testId, ApiRunMode.DEBUG.name()));
         List<Object> cases =new ArrayList<Object>();
         cases.add(api);
         testPlanTree.add(testPlan,  createThreadGroup(cases));

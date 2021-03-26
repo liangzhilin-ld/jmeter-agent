@@ -1,27 +1,17 @@
 package com.autotest.jmeter.jmeteragent.service.impl;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import org.apache.jmeter.assertions.AssertionResult;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
-import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.alibaba.fastjson.JSONArray;
-import com.autotest.data.mapper.ApiReportMapper;
 import com.autotest.data.mode.*;
 import com.autotest.data.mode.assertions.JsonAssertion;
 import com.autotest.data.mode.assertions.ResponseAssertion;
@@ -30,7 +20,6 @@ import com.autotest.data.mode.confelement.UserDefinedVariable;
 import com.autotest.data.mode.custom.BeanShell;
 import com.autotest.data.mode.processors.JdbcProcessor;
 import com.autotest.data.mode.processors.JsonExtractor;
-import com.autotest.data.service.impl.HttpTestcaseServiceImpl;
 import com.autotest.data.service.impl.ProjectManageServiceImpl;
 import com.autotest.jmeter.component.Assertions;
 import com.autotest.jmeter.component.ConfigElement;
@@ -38,10 +27,6 @@ import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.PostProcessors;
 import com.autotest.jmeter.component.PreProcessors;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-
-import cn.hutool.core.text.StrSpliter;
-import cn.hutool.core.util.StrUtil;
 import lombok.extern.apachecommons.CommonsLog;
 
 /**
@@ -85,14 +70,21 @@ public class JmeterHashTreeServiceImpl {
 	 * @param envId  环境
 	 * @return
 	 */
-	public Arguments getPubArgumentsOfDebug(int projectId,int envId) {	
+	public Arguments getPubArgumentsOfDebug(int projectId,String envStr) {	
 		List<UserDefinedVariable> udvs=testDadaService.getArgumentsByPid(projectId);
-		SyetemEnv env=testDadaService.getEnv(envId);
+//		SyetemEnv env=testDadaService.getEnv(envId);
 		Arguments args=ConfigElement.createArguments2(udvs);
-		Argument host = new Argument("host", env.getIp());
-        Argument port = new Argument("port", env.getPort());
-        args.addArgument(host);
-        args.addArgument(port);
+		
+		String[] env=envStr.split("//");
+		if(env.length==2) {
+			String[] addr=env[1].split(":");
+			if(addr.length==2) {
+				Argument host = new Argument("host", addr[0]);
+		        Argument port = new Argument("port", addr[1]);
+		        args.addArgument(host);
+		        args.addArgument(port);
+			}
+		}		
 		return args;
 	}
 	/**
@@ -104,7 +96,9 @@ public class JmeterHashTreeServiceImpl {
 		
 		List<UserDefinedVariable> definedVars=api.getArguments();
 		if(definedVars.size()>0) {
-			definedVars=(List<UserDefinedVariable>)JSONArray.parseArray(definedVars.toString(),UserDefinedVariable.class);
+			if(!(definedVars.get(0) instanceof UserDefinedVariable)) {
+				definedVars=(List<UserDefinedVariable>)JSONArray.parseArray(definedVars.toString(),UserDefinedVariable.class);
+			}
 			Arguments args=ConfigElement.createArguments2(definedVars);
 			testApiTree.add(sampler,args);
 		}
@@ -122,7 +116,10 @@ public class JmeterHashTreeServiceImpl {
 		QueryWrapper<ProjectManage> queryWrapper=new QueryWrapper<ProjectManage>();
 		queryWrapper.lambda().eq(ProjectManage::getProjectId, testcase.getProjectId());
 		List<ApiHeader> headers=projectManage.getOne(queryWrapper,false).getHeaders();
-		headers=(List<ApiHeader>)JSONArray.parseArray(headers.toString(),ApiHeader.class);
+		if(headers.size()>0&&!(headers.get(0) instanceof ApiHeader)) {
+			headers=(List<ApiHeader>)JSONArray.parseArray(headers.toString(),ApiHeader.class);
+		}
+		
 	    return headers;
 	}
 	
@@ -136,7 +133,9 @@ public class JmeterHashTreeServiceImpl {
 
 		List<ApiHeader> apiHeaders=api.getHeaders();
 		if(apiHeaders.size()>0) {
-			apiHeaders=(List<ApiHeader>)JSONArray.parseArray(apiHeaders.toString(),ApiHeader.class);
+			if(!(apiHeaders.get(0) instanceof ApiHeader)) {
+				apiHeaders=(List<ApiHeader>)JSONArray.parseArray(apiHeaders.toString(),ApiHeader.class);
+			}
 			HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
 			testApiTree.add(sampler,apiHeader);
 		}		
@@ -150,7 +149,7 @@ public class JmeterHashTreeServiceImpl {
 	 * @param api
 	 */
 	private <T> void addMockSampler(ListedHashTree threadGroupHashTree,T threadGroup,HttpTestcase api) {
-		List<Integer>  mockids=api.getIdOfPreMock();
+ 		List<Integer>  mockids=api.getIdOfPreMock();
 		if(mockids==null||mockids.size()==0)return;
 		List<ApiMock> preMock=testDadaService.getPreMock(mockids);
 		if (preMock!=null&&preMock.size()>0) {
@@ -266,51 +265,50 @@ public class JmeterHashTreeServiceImpl {
 		
 	}
 
-	private Queue<ApiReport> queue = new LinkedList<ApiReport>();	
-	public synchronized ApiReport getQueue() {
-		ApiReport response=queue.poll();
-		return response;
-	}
-
-	public synchronized void writeSamplers(HTTPSampleResult result) {
-	
-		JMeterContext ctx=JMeterContextService.getContext();
-		String commts=ctx.getCurrentSampler().getComment();
-		if(commts.length()==0)return;
-		ApiReport rport=new ApiReport();
-		rport.setHistoryId(ctx.getVariables().get("HistoryId"));
-		rport.setJobId(ctx.getVariables().get("JobId"));
-		List<String> comments=StrSpliter.splitTrimIgnoreCase(commts,"||",2,true);
-		rport.setCaseId(Integer.parseInt(comments.get(0)));
-		rport.setTcSuite(comments.get(1));
-		rport.setTcName(result.getSampleLabel());
-		rport.setTcResult(result.isSuccessful());
-		rport.setTcDuration(String.valueOf(result.getLatency()));
-		String assertStr="";
-		rport.setTcLog("");
-		if(!result.isSuccessful()) {
-			String tcLog="Response code:"+result.getResponseCode()+"\r\n"+
-					  	 "Response message: "+result.getResponseMessage();
-			rport.setTcLog(tcLog);
-			for(AssertionResult assR:result.getAssertionResults()) {
-				if(assR.isError()||assR.isFailure()) {
-					assertStr=assertStr+"["+assR.getName()+"]"+assR.getFailureMessage()+"\r\n";
-				}	
-			}
-		}
-		rport.setTcHeader(result.getRequestHeaders());
-		rport.setTcRequest(result.getSamplerData());
-		rport.setTcResponse(result.getResponseDataAsString());
-		rport.setTcAssert(assertStr);
-		rport.setTcRunsNum(1);
-		rport.setCreateTime(LocalDateTime.now());
-		if(rport.getJobId()==null) {
-			queue.offer(rport);
-			return;
-		}
-		Boolean flag=testDadaService.updateApiReport(rport);
-		if(!flag)log.error("用例ID:"+rport.getCaseId()+",名称:"+rport.getTcName()+"-----更新失败");
-		//result.getQueryString();
-		
-	}
+//	private Queue<ApiReport> queue = new LinkedList<ApiReport>();	
+//	public ApiReport getQueue() {
+//		ApiReport response=queue.poll();
+//		return response;
+//	}
+//
+//	public synchronized void writeSamplers(HTTPSampleResult result) {
+//	
+//		JMeterContext ctx=JMeterContextService.getContext();
+//		String commts=ctx.getCurrentSampler().getComment();
+//		if(commts.length()==0)return;
+//		ApiReport rport=new ApiReport();
+//		rport.setHistoryId(ctx.getVariables().get("HistoryId"));
+//		rport.setJobId(ctx.getVariables().get("JobId"));
+//		List<String> comments=StrSpliter.splitTrimIgnoreCase(commts,"||",2,true);
+//		rport.setCaseId(Integer.parseInt(comments.get(0)));
+//		rport.setTcSuite(comments.get(1));
+//		rport.setTcName(result.getSampleLabel());
+//		rport.setTcResult(result.isSuccessful());
+//		rport.setTcDuration(String.valueOf(result.getLatency()));
+//		String assertStr="";
+//		rport.setTcLog("");
+//		if(!result.isSuccessful()) {
+//			String tcLog="Response code:"+result.getResponseCode()+"\r\n"+
+//					  	 "Response message: "+result.getResponseMessage();
+//			rport.setTcLog(tcLog);
+//			for(AssertionResult assR:result.getAssertionResults()) {
+//				if(assR.isError()||assR.isFailure()) {
+//					assertStr=assertStr+"["+assR.getName()+"]"+assR.getFailureMessage()+"\r\n";
+//				}	
+//			}
+//		}
+//		rport.setTcHeader(result.getRequestHeaders());
+//		rport.setTcRequest(result.getSamplerData());
+//		rport.setTcResponse(result.getResponseDataAsString());
+//		rport.setTcAssert(assertStr);
+//		rport.setTcRunsNum(1);
+//		rport.setCreateTime(LocalDateTime.now());
+//		if(rport.getJobId()==null) {
+//			queue.offer(rport);
+//			return;
+//		}
+//		Boolean flag=testDadaService.updateApiReport(rport);
+//		if(!flag)log.error("用例ID:"+rport.getCaseId()+",名称:"+rport.getTcName()+"-----更新失败");
+//		//result.getQueryString();		
+//	}
 }

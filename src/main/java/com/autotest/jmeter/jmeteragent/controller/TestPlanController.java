@@ -15,16 +15,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.autotest.data.mode.ApiReport;
 import com.autotest.data.mode.HttpTestcase;
+import com.autotest.data.mode.ScenarioReport;
 import com.autotest.data.mode.ScenarioTestcase;
 //import com.autotest.data.mode.ApiTestcase2;
 import com.autotest.data.mode.TestScheduled;
 //import com.techstar.dmp.jmeteragent.bean.Response;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
+import com.autotest.jmeter.jmeteragent.service.impl.APIReportService;
 import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.autotest.jmeter.jmeteragent.service.impl.TestPlanServiceImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 @Api(tags = "TestPlan操作接口")
 @RestController
@@ -34,6 +37,7 @@ public class TestPlanController {
 	
 	private @Autowired TestPlanService testPlanService;
 	private @Autowired JmeterHashTreeServiceImpl debugrePonse;
+	private @Autowired APIReportService apiReportService;
 
 	/**
 	 * 启动测试计划
@@ -119,16 +123,20 @@ public class TestPlanController {
 	}
 
 	@ApiOperation(value = "接口调试")
-	@RequestMapping(value = "/startDebug", method = RequestMethod.POST)
-	public ApiReport debug(@RequestParam(value = "envId", required = true) int envId,@RequestBody HttpTestcase api) {
+	@RequestMapping(value = "/debugApi", method = RequestMethod.POST)
+	public ScenarioReport debugApi(
+			@ApiParam(name="env",value = "itmg: http://172.16.206.127:31100",required = true)
+			@RequestParam(value = "env", required = true) String envStr,
+			@RequestBody HttpTestcase api) {
 		
 		try {
 			long startTime = System.currentTimeMillis();
-			testPlanService.debugTestCase(api,envId);
-			ApiReport response=debugrePonse.getQueue();
+			String test_id="api"+String.valueOf(startTime);
+			testPlanService.debugTestCase(api,envStr,test_id);
+			ScenarioReport response=apiReportService.getResult(String.valueOf(startTime), "");
 			while(response==null) {
 				long dur=System.currentTimeMillis()-startTime;
-				response=debugrePonse.getQueue();
+				response=apiReportService.getResult(test_id, "");
 				if(dur>20000)break;
 			}
 			return response;
@@ -136,20 +144,22 @@ public class TestPlanController {
 			ex.printStackTrace();
 			return null;
 		}
-		
-		//debugrePonse.getQueue()
 	}
+
 	@ApiOperation(value = "场景调试")
 	@RequestMapping(value = "/debugScenario", method = RequestMethod.POST)
-	public ApiReport debugScenario(@RequestParam(value = "envId", required = true) int envId,@RequestBody ScenarioTestcase api) {
+	public ScenarioReport debugScenario(
+			@ApiParam(name="env",value = "itmg: http://172.16.206.127:31100",required = true)
+			@RequestParam(value = "env", required = true) String envStr,
+			@RequestBody ScenarioTestcase api) {
 		
 		try {
 			long startTime = System.currentTimeMillis();
-			testPlanService.debugTestCase(api,envId);
-			ApiReport response=debugrePonse.getQueue();
+			testPlanService.debugTestCase(api,envStr,String.valueOf(startTime));
+			ScenarioReport response=apiReportService.getResult(String.valueOf(startTime), "");
 			while(response==null) {
 				long dur=System.currentTimeMillis()-startTime;
-				response=debugrePonse.getQueue();
+				response=apiReportService.getResult(String.valueOf(startTime), "");
 				if(dur>20000)break;
 			}
 			return response;
@@ -157,10 +167,8 @@ public class TestPlanController {
 			ex.printStackTrace();
 			return null;
 		}
-		
-		//debugrePonse.getQueue()
 	}
-	private @Autowired TestDataServiceImpl testData;
+//	private @Autowired TestDataServiceImpl testData;
 //	
 //	@ApiOperation(value = "数据库调试")
 //	@PostMapping("addDtest")
