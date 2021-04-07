@@ -1,6 +1,7 @@
 package com.autotest.jmeter.component;
 
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.threads.gui.ThreadGroupGui;
 
 import com.autotest.data.mode.TheadGroupConfig;
@@ -19,7 +20,8 @@ public class ThreadGroups {
         threadGroup.setProperty(TestElement.GUI_CLASS, ThreadGroupGui.class.getName());
     	threadGroup.setEnabled(true);
         threadGroup.setName(tgentity.getName());  
-        threadGroup.setProperty(ThreadGroup.ON_SAMPLE_ERROR, tgentity.getOnSampleError()); 
+        threadGroup.setProperty(new StringProperty(ThreadGroup.ON_SAMPLE_ERROR, tgentity.getOnSampleError()));
+//        threadGroup.setProperty(ThreadGroup.ON_SAMPLE_ERROR, tgentity.getOnSampleError()); 
 //        threadGroup.setNumThreads(5);
 //        threadGroup.setRampUp(5);        
         threadGroup.setProperty(ThreadGroup.NUM_THREADS,tgentity.getNumThreads());//

@@ -5,6 +5,7 @@ import org.apache.jmeter.control.LoopController;
 import org.apache.jmeter.control.OnceOnlyController;
 import org.apache.jmeter.control.TransactionController;
 import org.apache.jmeter.control.gui.IfControllerPanel;
+import org.apache.jmeter.control.gui.LoopControlPanel;
 import org.apache.jmeter.control.gui.OnceOnlyControllerGui;
 import org.apache.jmeter.control.gui.TransactionControllerGui;
 import org.apache.jmeter.testelement.TestElement;
@@ -19,10 +20,14 @@ public class LogicController {
     public static LoopController createLoopController(String loops) {
         // Loop Controller
         LoopController loopController = new LoopController();
-        loopController.setLoops(loops);
+        //loopController.setLoops(loops);
         loopController.setContinueForever(false);
-        loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
-        loopController.initialize();
+        loopController.setProperty(new StringProperty(TestElement.GUI_CLASS, LoopControlPanel.class.getName()));
+        loopController.setProperty(new StringProperty(TestElement.TEST_CLASS, LoopController.class.getName()));
+        loopController.setProperty(new StringProperty(TestElement.NAME, "循环控制器"));
+        loopController.setProperty(new StringProperty(TestElement.ENABLED, "true"));
+        loopController.setProperty(new StringProperty(LoopController.LOOPS, loops));
+        //loopController.initialize();
         return loopController;
     }
     

@@ -7,33 +7,64 @@ import java.util.Map.Entry;
 import org.apache.jmeter.assertions.BeanShellAssertion;
 import org.apache.jmeter.control.OnceOnlyController;
 import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
-import org.apache.jmeter.extractor.json.jsonpath.gui.JSONPostProcessorGui;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerFactory;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPArgument;
-import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.property.BooleanProperty;
+import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jorphan.collections.ListedHashTree;
 import com.autotest.data.mode.assertions.ResponseAssertion;
-import com.autotest.data.mode.custom.SamplerLable;
-import com.alibaba.fastjson.JSON;
 import com.autotest.data.enums.ApiParam;
 import com.autotest.data.mode.ApiMock;
 import com.autotest.data.mode.HttpTestcase;
-import com.autotest.data.mode.ScenarioTestcase;
-//import com.autotest.jmeter.entity.assertion.ResponseAssert;
 import com.autotest.data.mode.processors.JsonExtractor;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-//import com.autotest.data.mode.ApiTestcase;
 import kg.apc.jmeter.samplers.DummySampler;
 import kg.apc.jmeter.samplers.DummySamplerGui;
 
 public class HTTPSampler {
+	
+	public static HTTPSamplerProxy getHttpSamplerProxy(HttpTestcase testApi,Map<String, String> header) {
+        HTTPSamplerProxy httpSamplerProxy = new HTTPSamplerProxy();
+        header=new HashMap<String, String>();
+        header.put(ApiParam.CASE_ID.name(), testApi.getCaseId().toString());
+        header.put(ApiParam.SUITE_Id.name(), testApi.getSuiteId().toString()); 
+        HeaderManager headerManager=ConfigElement.createHeaderManager(header);
+        httpSamplerProxy.setHeaderManager(headerManager);        
+        if(testApi.getApiIn().equals("body")) {
+        	httpSamplerProxy.setPostBodyRaw(true);    
+        	httpSamplerProxy.addNonEncodedArgument("",testApi.getParameters(),"=");            
+        }else {
+        	//表单数据参数提交
+        	AddArgumentFromClipboard(httpSamplerProxy,testApi.getParameters());                        
+        }
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.domain", ""));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.port", ""));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.protocol", testApi.getApiProtocol()));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.path", testApi.getApiUri()));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.method", testApi.getApiMethod()));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.contentEncoding", "UTF-8"));
+        httpSamplerProxy.setProperty(new BooleanProperty("HTTPSampler.follow_redirects", true));
+        httpSamplerProxy.setProperty(new BooleanProperty("HTTPSampler.auto_redirects", false));
+        httpSamplerProxy.setProperty(new BooleanProperty("HTTPSampler.use_keepalive", true));
+        httpSamplerProxy.setProperty(new BooleanProperty("HTTPSampler.DO_MULTIPART_POST", false));
+        httpSamplerProxy.setProperty(new StringProperty("TestElement.gui_class", "org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui"));
+        httpSamplerProxy.setProperty(new StringProperty("TestElement.test_class", "org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy"));
+        httpSamplerProxy.setProperty(new StringProperty("TestElement.name", testApi.getApiName()));
+        httpSamplerProxy.setProperty(new StringProperty("TestElement.enabled", "true"));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.embedded_url_re", ""));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.connect_timeout", ""));
+        httpSamplerProxy.setProperty(new StringProperty("HTTPSampler.response_timeout", ""));
+        return httpSamplerProxy;
+    }
+	
+	
     /**
      * 创建http Sampler请求.性能测试调用
      * @param <T>
@@ -68,18 +99,22 @@ public class HTTPSampler {
      * @return
      */
     public static TechstarHTTPSamplerProxy crtHTTPSampler(HttpTestcase testApi,Map<String, String> header) {
-//        SamplerLable lable=new SamplerLable();
-//        lable.setCaseName(testApi.getApiName());
-//        lable.setCaseId(testApi.getCaseId().toString());
-//        lable.setSuiteId(testApi.getSuiteId().toString());
+    	header=new HashMap<String, String>();
         header.put(ApiParam.CASE_ID.name(), testApi.getCaseId().toString());
-        header.put(ApiParam.SUITE_Id.name(), testApi.getSuiteId().toString());
-        
+        header.put(ApiParam.SUITE_Id.name(), testApi.getSuiteId().toString());        
     	TechstarHTTPSamplerProxy httpSampler = new TechstarHTTPSamplerProxy(HTTPSamplerFactory.DEFAULT_CLASSNAME);
-        httpSampler.setName(testApi.getApiName());//JSON.toJSONString(lable)
+    	
+        httpSampler.setProperty(new StringProperty("HTTPSampler.domain", ""));
+        httpSampler.setProperty(new StringProperty("HTTPSampler.port", ""));
+        httpSampler.setContentEncoding("UTF-8");
+        httpSampler.setEmbeddedUrlRE("");
+        httpSampler.setConnectTimeout("");
+        httpSampler.setResponseTimeout("");
         
+        
+    	httpSampler.setName(testApi.getApiName());//JSON.toJSONString(lable)
+    	httpSampler.setEnabled(true);
         HeaderManager headerManager=ConfigElement.createHeaderManager(header);
-//        headerManager.setProperty("Content-Type", "multipart/form-data");
 //        httpSampler.setDomain("uttesh.com");
 //        httpSampler.setPort(80);
         httpSampler.setProtocol(testApi.getApiProtocol());
@@ -95,7 +130,7 @@ public class HTTPSampler {
         httpSampler.setHeaderManager(headerManager);
         if(testApi.getApiIn().equals("body")) {
         	httpSampler.setPostBodyRaw(true);    
-            httpSampler.addNonEncodedArgument("",testApi.getParameters(),"");            
+            httpSampler.addNonEncodedArgument("",testApi.getParameters(),"=");            
         }else {
         	//表单数据参数提交
         	AddArgumentFromClipboard(httpSampler,testApi.getParameters());                        
@@ -128,7 +163,24 @@ public class HTTPSampler {
     		}		
     	}
     }
-    
+    public static void AddArgumentFromClipboard(HTTPSamplerProxy httpSampler,String args) {    	
+    	if(StrUtil.isNotEmpty(args)) {
+    		JSONObject jsonOb=JSONUtil.parseObj(args);
+    		if(!jsonOb.isEmpty()) {
+        		for (Entry<String, Object> para : jsonOb.entrySet()) {
+        			String getValue=StrUtil.isEmptyIfStr(para.getValue())?"":para.getValue().toString();
+        	    	HTTPArgument argument = new HTTPArgument("", "");	    	
+        	        argument.setName(para.getKey());//参数名称
+        	        argument.setValue(getValue); //参数值
+        	        argument.setAlwaysEncoded(false);//URL_Encode?
+        	        argument.setContentType("text/plain");//默认
+        	        argument.setUseEquals(true);//Include_Equals?
+        	        argument.setMetaData("=");//参数与值之间的分隔符，默认=号        	        
+        			httpSampler.getArguments().addArgument(argument);           			
+				}
+    		}		
+    	}
+    }
     /**
      * 接口测试登陆方法
      * @return

@@ -99,6 +99,13 @@
 	           	</exclusion>
 	       	</exclusions>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.jmeter/ApacheJMeter_functions -->
+		<dependency>
+		    <groupId>org.apache.jmeter</groupId>
+		    <artifactId>ApacheJMeter_functions</artifactId>
+		    <version>5.3</version>
+		</dependency>
+				
 		<dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

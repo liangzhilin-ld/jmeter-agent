@@ -11,6 +11,7 @@ import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.config.JdbcDataSet;
 import org.apache.jmeter.config.gui.ArgumentsPanel;
 import org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui;
+import org.apache.jmeter.protocol.http.config.gui.UrlConfigGui;
 import org.apache.jmeter.protocol.http.control.CacheManager;
 import org.apache.jmeter.protocol.http.control.CookieManager;
 import org.apache.jmeter.protocol.http.control.Header;
@@ -19,10 +20,14 @@ import org.apache.jmeter.protocol.http.gui.CacheManagerGui;
 import org.apache.jmeter.protocol.http.gui.CookiePanel;
 import org.apache.jmeter.protocol.http.gui.HeaderPanel;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.jdbc.config.DataSourceElement;
 import org.apache.jmeter.testbeans.gui.TestBeanGUI;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.CollectionProperty;
+import org.apache.jmeter.testelement.property.StringProperty;
+import org.apache.jmeter.testelement.property.TestElementProperty;
+
 import com.autotest.data.mode.confelement.ApiHeader;
 import com.alibaba.fastjson.JSONArray;
 import com.autotest.data.mode.SyetemDb;
@@ -39,10 +44,26 @@ public class ConfigElement {
     public static ConfigTestElement httpDefaultsGui() {
     	
     	 ConfigTestElement cong=new ConfigTestElement();
-    	 cong.setProperty(TestElement.TEST_CLASS,  ConfigTestElement.class.getName());
-         cong.setProperty(TestElement.GUI_CLASS,  HttpDefaultsGui.class.getName());//"org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui"
+    	 
+    	 UrlConfigGui urlConfigGui=new UrlConfigGui(false, true, false);
+    	 ConfigTestElement el = (ConfigTestElement) urlConfigGui.createTestElement();
+    	 cong.clear(); 
+    	 cong.addConfigElement(el);
+    	 cong.removeProperty(HTTPSamplerBase.IMAGE_PARSER);
+    	 cong.removeProperty(HTTPSamplerBase.CONCURRENT_DWN);
+    	 cong.setProperty(new StringProperty(HTTPSamplerBase.CONCURRENT_POOL,
+                 String.valueOf(HTTPSamplerBase.CONCURRENT_POOL_SIZE)));
+    	 cong.removeProperty(HTTPSamplerBase.MD5);
+    	 cong.removeProperty(HTTPSamplerBase.EMBEDDED_URL_RE);
+    	 cong.removeProperty(HTTPSamplerBase.IP_SOURCE);
+    	 cong.removeProperty(HTTPSamplerBase.IP_SOURCE_TYPE);
+    	 
+    	 
+    	 cong.setProperty(new StringProperty(TestElement.TEST_CLASS,  ConfigTestElement.class.getName()));
+         cong.setProperty(new StringProperty(TestElement.GUI_CLASS,  HttpDefaultsGui.class.getName()));//"org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui"
          cong.setProperty(TestElement.NAME, "http默认请求");
          cong.setProperty(TestElement.ENABLED, true);
+         cong.setComment("");
          cong.setProperty(HTTPSampler.DOMAIN, "${host}");//69  172.16.206.128
          cong.setProperty(HTTPSampler.PORT, "${port}");//6600   8888
          cong.setProperty(HTTPSampler.PROTOCOL, "http");
@@ -51,6 +72,11 @@ public class ConfigElement {
          cong.setProperty(HTTPSampler.PATH, "");
          cong.setProperty(HTTPSampler.CONNECT_TIMEOUT, "");
          cong.setProperty(HTTPSampler.RESPONSE_TIMEOUT, "");
+         
+         cong.setProperty(HTTPSampler.IMPLEMENTATION, "","");
+         cong.setProperty(HTTPSampler.PROXYPASS, "","");
+         cong.setProperty(HTTPSampler.PROXYUSER, "","");
+
          return cong;
     }
 	  /**
@@ -76,9 +102,22 @@ public class ConfigElement {
     }
     public static HeaderManager createHeaderManager(List<com.autotest.data.mode.confelement.ApiHeader> headers) {
     	HeaderManager headerManager = new HeaderManager();
+    	headerManager.setName("HTTP Header Manager");
+    	headerManager.setComment("");
+    	headerManager.setEnabled(true);
         headerManager.setProperty(TestElement.GUI_CLASS, HeaderPanel.class.getName());
         headerManager.setProperty(TestElement.NAME, "HTTP HeaderManager");
-        headerManager.setProperty(TestElement.COMMENTS, "Created from cURL on "+LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+        headerManager.setProperty(TestElement.COMMENTS, "Created from cURL on "+LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));        
+//        ArrayList<TestElementProperty> headerMangerList = new ArrayList<>();
+//        Header header = new Header("Content-Type", "application/json");
+//        TestElementProperty HeaderElement = new TestElementProperty("", header);
+//        headerMangerList.add(HeaderElement);        
+//        for (ApiHeader apiHeader : headers) {
+//        	header=new Header(apiHeader.getName(), apiHeader.getValue());
+//        	HeaderElement = new TestElementProperty("", header);
+//        	headerMangerList.add(HeaderElement);
+//		}
+//        headerManager.setProperty(new CollectionProperty(HeaderManager.HEADERS, headerMangerList));
         boolean hasAcceptEncoding = false;
         if(headers.size()==0)
     		return headerManager;
@@ -153,6 +192,7 @@ public class ConfigElement {
     public static CacheManager createCacheManager() {
     	CacheManager cacheManager=new CacheManager();
     	cacheManager.setName("HTTP缓存管理器");
+    	cacheManager.setComment("");
     	cacheManager.setClearEachIteration(false);
      	cacheManager.setControlledByThread(false);
     	cacheManager.setUseExpires(true);     
@@ -170,6 +210,7 @@ public class ConfigElement {
     public static CookieManager createCookieManager() {
     	CookieManager coolieManager=new CookieManager();
     	coolieManager.setName("HTTP Cookie管理器");
+    	coolieManager.setComment("");
     	coolieManager.setClearEachIteration(false);
     	coolieManager.setControlledByThread(false);
     	coolieManager.setCookiePolicy("standard");
@@ -187,7 +228,8 @@ public class ConfigElement {
      */
     public static DataSourceElement JdbcConnection(SyetemDb dbInfo) {    	
     	DataSourceElement jdbcConn=new DataSourceElement();    	
-    	jdbcConn.setName("JDBC Connection Configuration");    	
+    	jdbcConn.setName("JDBC Connection Configuration");   
+    	jdbcConn.setComment("");
     	jdbcConn.setEnabled(true);
     	jdbcConn.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
     	jdbcConn.setProperty(TestElement.TEST_CLASS,DataSourceElement.class.getName()); 

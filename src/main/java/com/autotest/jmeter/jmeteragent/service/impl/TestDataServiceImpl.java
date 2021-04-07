@@ -154,19 +154,34 @@ public class TestDataServiceImpl {
 		queryWrapper.eq("CASE_ID", id);
 		return apiTestcase.getOne(queryWrapper);
 	}
-	public List<HttpTestcase> getTestcaseOfFail(String history) {
+	public List<Object> getTestcaseOfFail(String history) {
+		List<Object> faileList=new ArrayList<Object>();
 		QueryWrapper<ScenarioReport> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ScenarioReport::getHistoryId, history)
-							.eq(ScenarioReport::getTcResult,false)
-							.select(ScenarioReport::getTcId);
+							 .and(wrapper -> wrapper.isNull(ScenarioReport::getTcResult)
+									 .or().eq(ScenarioReport::getTcResult,false))
+							 .select(ScenarioReport::getTcId,ScenarioReport::getTcType);
 		List<ScenarioReport> ids=apiReport.list(queryWrapper);
 		if(ids.size()==0)
-			return new ArrayList<HttpTestcase>();
-		List<Integer> cids = new ArrayList<Integer>();
-		ids.forEach(item->cids.add(Integer.parseInt(item.getTcId())));
-		QueryWrapper<HttpTestcase> wrapper = new QueryWrapper<>();
-		wrapper.lambda().in(HttpTestcase::getCaseId, cids);
-		return httpServer.list(wrapper);
+			return faileList;
+//		List<Integer> cids = new ArrayList<Integer>();
+//		ids.forEach(item->cids.add(Integer.parseInt(item.getTcId())));
+//		
+		ids.forEach(item->{
+			if(item.getTcType().equals(ScenarioTestcase.TYPE_SCENARIO)) {
+				QueryWrapper<ScenarioTestcase> wrapper = new QueryWrapper<>();
+				wrapper.lambda().eq(ScenarioTestcase::getId, item.getTcId());
+				faileList.add(scenarioServer.getOne(wrapper));
+			}else {
+				QueryWrapper<HttpTestcase> wrapper = new QueryWrapper<>();
+				wrapper.lambda().eq(HttpTestcase::getCaseId, item.getTcId());
+				faileList.add(httpServer.getOne(wrapper));
+			}
+		});
+		return faileList;
+//		QueryWrapper<HttpTestcase> wrapper = new QueryWrapper<>();
+//		wrapper.lambda().in(HttpTestcase::getCaseId, cids);
+//		return httpServer.list(wrapper);
 	}
 	public List<HttpTestcase> getTestcase() {
 		return httpServer.list();
@@ -180,7 +195,7 @@ public class TestDataServiceImpl {
 	public List<HttpTestcase> getTestcaseByIds(TestScheduled trig) {		
 		List<Integer> idList=trig.getTcCaseids().get(TestScheduled.TYPE_SAMPLER);
 		if(idList.size()==0||idList==null)
-			return getTestcase();
+			return new ArrayList<HttpTestcase>();//getTestcase();
 		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().in(HttpTestcase::getCaseId, idList);
 		return httpServer.list(queryWrapper);

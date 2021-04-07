@@ -143,9 +143,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     	sampleResults.forEach(res->writeSampler(res));
     }
     private void writeSampler(SampleResult sampleResults) {
-    	
     	ScenarioReport report=new ScenarioReport();
-    	SamplerReport single=new SamplerReport();
     	List<SamplerReport> listsam=new ArrayList<SamplerReport>();
     	String caseName=sampleResults.getSampleLabel();
     	Boolean isScenaro=sampleResults.getResponseMessage().startsWith("Number of samples in transaction");
@@ -156,18 +154,17 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         		return;
         	if(sub.length>0){
         		for (int i = 0; i < sub.length; i++) {
+        			SamplerReport single=new SamplerReport();
         			single.setCaseId(getHeaderKey("CASE_ID:(.+)",sub[i].getRequestHeaders()));
         			single.setTcSuite(getHeaderKey("SUITE_Id:(.+)",sub[i].getRequestHeaders()));
         			single.setIsSuccess(sub[i].isSuccessful());
         			single.setTcName(sub[i].getSampleLabel());
-        			single.setTcDuration(String.valueOf(sub[i].getLatency()));
+        			single.setTcDuration(String.valueOf(sub[i].getTime()));
         			single.setTcHeader(sub[i].getRequestHeaders());
         			String tcLog="Response code:"+sub[i].getResponseCode()+"\r\n"+
     					  	 "Response message: "+sub[i].getResponseMessage();
         			single.setTcLog(tcLog);
         			single.setTcRequest(sub[i].getSamplerData());
-//        			Boolean isjson=JSONUtil.isJson(sub[i].getResponseDataAsString());
-//        			cn.hutool.json.JSONObject ff=JSONUtil.parseObj(sub[i].getResponseDataAsString());
         			single.setTcResponse(sub[i].getResponseDataAsString());
         			List<String> listAssert=new ArrayList<String>();
         			for(AssertionResult assR:sub[i].getAssertionResults()){
@@ -176,13 +173,14 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         			} 
         			single.setTcAssert(listAssert);
         			listsam.add(single);
-        			report.setTcName(data.getCaseName());
-        			report.setTcId(data.getCaseId());
-        			report.setTcSuite(data.getSuiteId().toString());
-        			report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
     			}
+    			report.setTcName(data.getCaseName());
+    			report.setTcId(data.getCaseId());
+    			report.setTcSuite(data.getSuiteId().toString());
+    			report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
         	}
     	}else {
+    		SamplerReport single=new SamplerReport();
     		single.setTcHeader(sampleResults.getRequestHeaders());
 			String tcLog="Response code:"+sampleResults.getResponseCode()+"\r\n"+
 				  	 "Response message: "+sampleResults.getResponseMessage();
@@ -213,12 +211,11 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 //		report.setTcSuite(data.getSuiteId().toString());
 		
 		report.setTcResult(sampleResults.isSuccessful());
-		report.setTcDuration(String.valueOf(sampleResults.getLatency()));
+		report.setTcDuration(String.valueOf(sampleResults.getTime()));
 		report.setHistoryId(this.historyId);
 		report.setJobId(this.jobId);
 		report.setProjectId(1);
 		report.setConsole(getConsole());
-		
 		if(isScenaro)report.setTcType(ScenarioTestcase.TYPE_SCENARIO);
 //		if(report.getId()==null)report.setId(1);
         //调试模式下处理方法，待调试

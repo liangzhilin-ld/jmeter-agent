@@ -1,48 +1,56 @@
-package com.autotest.jmeter.jmeteragent.service.impl;
+package com.autotest.jmeter.jmeteragent.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.config.Arguments;
-import org.apache.jmeter.protocol.http.control.Header;
+import org.apache.jmeter.control.TransactionController;
 import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
-import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
+import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
-import com.autotest.data.enums.ApiParam;
+import com.alibaba.fastjson.JSONObject;
 import com.autotest.data.mode.*;
 import com.autotest.data.mode.assertions.JsonAssertion;
 import com.autotest.data.mode.assertions.ResponseAssertion;
 import com.autotest.data.mode.confelement.ApiHeader;
 import com.autotest.data.mode.confelement.UserDefinedVariable;
 import com.autotest.data.mode.custom.BeanShell;
+import com.autotest.data.mode.custom.SamplerLable;
 import com.autotest.data.mode.processors.JdbcProcessor;
 import com.autotest.data.mode.processors.JsonExtractor;
 import com.autotest.data.service.impl.ProjectManageServiceImpl;
 import com.autotest.jmeter.component.Assertions;
 import com.autotest.jmeter.component.ConfigElement;
 import com.autotest.jmeter.component.HTTPSampler;
+import com.autotest.jmeter.component.LogicController;
 import com.autotest.jmeter.component.PostProcessors;
 import com.autotest.jmeter.component.PreProcessors;
+import com.autotest.jmeter.component.ThreadGroups;
+import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.apachecommons.CommonsLog;
 
 /**
- * 测试用例数据转换，组装
+ * 创建jmx脚本调试使用该类
  * @author Techstar
  *
  */
 @Service
 @CommonsLog
 @Transactional(rollbackFor=Exception.class)
-public class JmeterHashTreeServiceImpl {
+public class CrtHashTreeService {
 	private @Autowired TestDataServiceImpl testDadaService;
 	private @Autowired  ProjectManageServiceImpl projectManage;
+	
 	private Map<String, String> header=new HashMap<String, String>();
 
 	private Integer getProjectId(TestScheduled trig) {
@@ -149,13 +157,9 @@ public class JmeterHashTreeServiceImpl {
 			if(!(apiHeaders.get(0) instanceof ApiHeader)) {
 				apiHeaders=(List<ApiHeader>)JSONArray.parseArray(apiHeaders.toString(),ApiHeader.class);
 			}
-//			HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
-//			testApiTree.add(sampler,apiHeader);
-		}	
-		HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
-		apiHeader.getHeaders().addItem(new Header(ApiParam.CASE_ID.name(), api.getCaseId().toString()));
-		apiHeader.getHeaders().addItem(new Header(ApiParam.SUITE_Id.name(), api.getSuiteId().toString()));
-		testApiTree.add(sampler,apiHeader);
+			HeaderManager apiHeader=ConfigElement.createHeaderManager(apiHeaders);
+			testApiTree.add(sampler,apiHeader);
+		}		
 	}
 		
 	/**
@@ -259,9 +263,9 @@ public class JmeterHashTreeServiceImpl {
 	 */
 	public <T> void addSamplers(ListedHashTree threadGroupHashTree,T threadGroup,HttpTestcase api) {
 		log.info("创建http sampler");
-		//TechstarHTTPSamplerProxy sampler=HTTPSampler.crtHTTPSampler(api,header);
-		HTTPSamplerProxy sampler=HTTPSampler.getHttpSamplerProxy(api, header);
-    	ListedHashTree testApiTree = new ListedHashTree(sampler);
+		//header.put("case_id", api.getCaseId().toString());//也可通过comments设置用例ID
+		HTTPSamplerProxy sampler=HTTPSampler.getHttpSamplerProxy(api,header);
+    	ListedHashTree testApiTree = new ListedHashTree();
     	//header,用户自定义变量，前置，后置，断言查询并解析
     	log.info("header添加");
     	this.addHeader(testApiTree, sampler, api); 
@@ -280,45 +284,58 @@ public class JmeterHashTreeServiceImpl {
 		
 	}
 
-
-//	public synchronized void writeSamplers(HTTPSampleResult result) {
-//	
-//		JMeterContext ctx=JMeterContextService.getContext();
-//		String commts=ctx.getCurrentSampler().getComment();
-//		if(commts.length()==0)return;
-//		ApiReport rport=new ApiReport();
-//		rport.setHistoryId(ctx.getVariables().get("HistoryId"));
-//		rport.setJobId(ctx.getVariables().get("JobId"));
-//		List<String> comments=StrSpliter.splitTrimIgnoreCase(commts,"||",2,true);
-//		rport.setCaseId(Integer.parseInt(comments.get(0)));
-//		rport.setTcSuite(comments.get(1));
-//		rport.setTcName(result.getSampleLabel());
-//		rport.setTcResult(result.isSuccessful());
-//		rport.setTcDuration(String.valueOf(result.getLatency()));
-//		String assertStr="";
-//		rport.setTcLog("");
-//		if(!result.isSuccessful()) {
-//			String tcLog="Response code:"+result.getResponseCode()+"\r\n"+
-//					  	 "Response message: "+result.getResponseMessage();
-//			rport.setTcLog(tcLog);
-//			for(AssertionResult assR:result.getAssertionResults()) {
-//				if(assR.isError()||assR.isFailure()) {
-//					assertStr=assertStr+"["+assR.getName()+"]"+assR.getFailureMessage()+"\r\n";
-//				}	
-//			}
-//		}
-//		rport.setTcHeader(result.getRequestHeaders());
-//		rport.setTcRequest(result.getSamplerData());
-//		rport.setTcResponse(result.getResponseDataAsString());
-//		rport.setTcAssert(assertStr);
-//		rport.setTcRunsNum(1);
-//		rport.setCreateTime(LocalDateTime.now());
-//		if(rport.getJobId()==null) {
-//			queue.offer(rport);
-//			return;
-//		}
-//		Boolean flag=testDadaService.updateApiReport(rport);
-//		if(!flag)log.error("用例ID:"+rport.getCaseId()+",名称:"+rport.getTcName()+"-----更新失败");
-//		//result.getQueryString();		
-//	}
+    public ListedHashTree creatTransactionControllerTree(ScenarioTestcase tc) {
+    	SamplerLable transLable=new SamplerLable();
+    	transLable.setCaseId(tc.getId().toString());
+    	transLable.setSuiteId(tc.getSuiteId().toString());
+    	transLable.setCaseName(tc.getScenarioName());
+    	if(tc.getTag().equals("登陆"))transLable.setIsLogin(true);
+    	
+    	TransactionController tsController=LogicController.transactionController(JSON.toJSONString(transLable));
+		ListedHashTree tcControllerTree=new ListedHashTree(); 
+		ArrayList<JSONObject> listObj=tc.getHashtree();
+		if(listObj.size()==0)return tcControllerTree;
+		for (JSONObject json : listObj) {
+			String type=json.getString("type");
+			if(type.contains(ScenarioTestcase.TYPE_HTTP_SAMPLER)) {
+				HttpTestcase htc=testDadaService.getTestcaseByID(json.getInteger("id"));
+				
+				this.addSamplers(tcControllerTree, tsController, htc);
+				continue;
+			}
+			if(type.contains(ScenarioTestcase.TYPE_LOGIN_CONTROLLER)) {
+				continue;
+			}
+			if(type.contains(ScenarioTestcase.TYPE_SCENARIO)) {
+				ScenarioTestcase stc=testDadaService.getScenariosByid(json.getInteger("id"));
+				tcControllerTree.add(tsController,creatTransactionControllerTree(stc));
+			}
+		}
+		return tcControllerTree;
+    }
+    
+    public ListedHashTree createThreadGroup(List<Object> subList) {
+    	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
+        ListedHashTree threadGroupHashTree = new ListedHashTree();
+        Boolean flag=subList.get(0) instanceof ScenarioTestcase;
+        Integer pid=flag?((ScenarioTestcase)subList.get(0)).getProjectId()
+        				:((HttpTestcase)subList.get(0)).getProjectId();
+        ScenarioTestcase loginsc=testDadaService.getLoginScenarios(pid);
+        threadGroupHashTree.add(threadGroup, creatTransactionControllerTree(loginsc));
+//        threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
+        for (Object object : subList) {
+        	if(object instanceof ScenarioTestcase) {
+        		ScenarioTestcase stc=(ScenarioTestcase) object;
+        		ListedHashTree tcControllerTree=creatTransactionControllerTree(stc);
+    			threadGroupHashTree.add(threadGroup, tcControllerTree);
+    			continue;
+	        }
+	        if(object instanceof HttpTestcase) {
+	        	HttpTestcase tc=(HttpTestcase) object;
+	        	this.addSamplers(threadGroupHashTree, threadGroup, tc);
+	        	
+	        }
+		}
+        return threadGroupHashTree;
+    }
 }

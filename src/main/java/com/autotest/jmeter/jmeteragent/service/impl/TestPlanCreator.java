@@ -15,12 +15,16 @@ import com.autotest.jmeter.component.ThreadGroups;
 //import com.techstar.dmp.jmeteragent.bean.*;
 import com.autotest.jmeter.jmeteragent.config.JmeterProperties;
 
+import cn.hutool.core.util.StrUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
@@ -36,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import org.apache.jmeter.control.LoopController;
 import org.apache.jmeter.control.TransactionController;
+import org.apache.jmeter.control.gui.TestPlanGui;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.Argument;
 import org.apache.jmeter.assertions.JSONPathAssertion;
@@ -44,8 +49,11 @@ import org.apache.jmeter.protocol.http.control.Header;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.TechstarHTTPSamplerProxy;
 import org.apache.jmeter.protocol.jdbc.processor.JDBCPreProcessor;
+import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.TestPlan;
+import org.apache.jmeter.testelement.property.BooleanProperty;
+import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.extractor.BeanShellPostProcessor;
 import org.apache.jmeter.modifiers.BeanShellPreProcessor;
@@ -81,60 +89,71 @@ public class TestPlanCreator {
     }
 
     public HashTree create(TestScheduled trig) {
+//    	com.autotest.jmeter.jmeteragent.config.TestPlanCreator.run(trig);
         log.info("创建测试计划");
-        TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
+        TestPlan testPlan = new TestPlan("Test Plan");
+        testPlan.setFunctionalMode(false);
+        testPlan.setSerialized(false);
+        testPlan.setTearDownOnShutdown(true);
+        testPlan.setProperty(TestElement.TEST_CLASS, TestPlan.class.getName());
+        testPlan.setProperty(TestElement.GUI_CLASS, TestPlanGui.class.getName());
+        testPlan.setProperty(new BooleanProperty(TestElement.ENABLED, true));
+        testPlan.setProperty(new StringProperty(TestElement.COMMENTS, ""));
+        testPlan.setTestPlanClasspath("");
+        Arguments arguments = new Arguments();
+        testPlan.setUserDefinedVariables(arguments);
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
         
         //-------------------------------------------------------------------------------------------
-        log.info("创建公共配置");
+        log.info("创建公共配置");  
         testPlanTree.add(testPlan, jmeterCompant.getPubArguments(trig));
         testPlanTree.add(testPlan,ConfigElement.httpDefaultsGui());
         testPlanTree.add(testPlan,ConfigElement.createCookieManager());
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(jmeterCompant.getPubHeader(trig)));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
-        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
+
         log.info("创建线程组");
         int threadNum=trig.getNumOfConcurrent();//并发数判断
-   
         List<Object> collects=new ArrayList<Object>();
 		List<ScenarioTestcase>  scens=testData.getScenarios(trig);
 		List<HttpTestcase>  listcase=testData.getTestcaseByIds(trig);
 		if(scens.size()>0)collects.addAll(scens);
 		if(listcase.size()>0)collects.addAll(listcase);
         //将用例按并发数threadNum平均分配到各线程组
-        if(threadNum>collects.size()) {
+        if(threadNum==1||threadNum>collects.size()) {
         	testPlanTree.add(testPlan, createThreadGroup(collects));
-        	return testPlanTree;
+        	//return testPlanTree;
+        }else {
+            for (int i = 0; i < collects.size()/threadNum; i++) {
+            	List<Object> subList=collects.subList(i*threadNum, (i+1)*threadNum);
+                testPlanTree.add(testPlan,  createThreadGroup(subList));            
+    		}
+            if(collects.size() % threadNum != 0) {
+            	List<Object> subList=collects.subList((collects.size() / threadNum) * threadNum, collects.size());
+            	testPlanTree.add(testPlan,  createThreadGroup(subList));
+            }
         }
-        for (int i = 0; i < collects.size()/threadNum; i++) {
-        	List<Object> subList=collects.subList(i*threadNum, (i+1)*threadNum);
-            testPlanTree.add(testPlan,  createThreadGroup(subList));            
+		try {
+			//jmeter脚本.jmx自动生成
+			String random = String.valueOf(System.currentTimeMillis() / 1000);
+			String jmxPath=StrUtil.format("E:\\automation\\Appache\\apache-jmeter-5.3\\jtl\\test_{}.jmx", random);
+			org.apache.jmeter.save.SaveService.saveTree(testPlanTree, new FileOutputStream(jmxPath));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-        if(collects.size() % threadNum != 0) {
-        	List<Object> subList=collects.subList((collects.size() / threadNum) * threadNum, collects.size());
-        	testPlanTree.add(testPlan,  createThreadGroup(subList));
-        }
+        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
         return testPlanTree;
     }
     /**
      * 测试计划创建
      * @param subList
      * @return
-     */
-    
-//    public ListedHashTree createThreadGroup(List<HttpTestcase> subList) {
-//    	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
-//        ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
-//        log.info("添加登陆组件");
-//        threadGroupHashTree.add(threadGroup, HTTPSampler.loginControll());
-//        subList.forEach(item->jmeterCompant.addSamplers(threadGroupHashTree, threadGroup, item));
-//        return threadGroupHashTree;
-//    }
-    
-    
-    
-    
+     */    
     public ListedHashTree createThreadGroup(List<Object> subList) {
     	ThreadGroup threadGroup = ThreadGroups.create(ThreadGroups.apiTestTheadGroup());                
         ListedHashTree threadGroupHashTree = new ListedHashTree(threadGroup);
@@ -196,7 +215,7 @@ public class TestPlanCreator {
      * @param failedList
      * @return
      */
-    public HashTree reTryTest(TestScheduled trig,List<HttpTestcase> failedList) {
+    public HashTree reTryTest(TestScheduled trig,List<Object> failedList) {
         log.info("创建测试计划");
         TestPlan testPlan = new TestPlan("Create JMeter Script From Java Code");
         ListedHashTree testPlanTree = new ListedHashTree(testPlan);
@@ -209,6 +228,7 @@ public class TestPlanCreator {
         testPlanTree.add(testPlan,ConfigElement.createCacheManager());
         testPlanTree.add(testPlan,ConfigElement.createHeaderManager(jmeterCompant.getPubHeader(trig)));
         testData.getSyetemDbAll().forEach(item->testPlanTree.add(testPlan,ConfigElement.JdbcConnection(item)));
+        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
         log.info("创建线程组");
         List<Object> cases =new ArrayList<Object>();
         cases.addAll(failedList);

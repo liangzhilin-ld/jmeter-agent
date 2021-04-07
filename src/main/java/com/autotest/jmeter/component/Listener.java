@@ -50,6 +50,7 @@ public class Listener {
     public static BackendListener backendListener(String jobid, String historyId, String runMode) {
         BackendListener backendListener = new BackendListener();
         backendListener.setName(jobid);
+        backendListener.setComment("");
         Arguments arguments = new Arguments();
         arguments.addArgument(APIBackendListenerClient.JOB_ID, jobid);
         if (StringUtils.isNotBlank(runMode)) {
