@@ -28,6 +28,9 @@ public class PreProcessors {
 		 
 		 public static BeanShellPreProcessor beanShellPreProcessor(String script) {
 		     BeanShellPreProcessor beanShellPreProcessor = new BeanShellPreProcessor();
+		     beanShellPreProcessor.setProperty(TestElement.GUI_CLASS,TestBeanGUI.class.getName());
+		     beanShellPreProcessor.setProperty(TestElement.TEST_CLASS,BeanShellPreProcessor.class.getName());
+		     beanShellPreProcessor.setEnabled(true);
 		     beanShellPreProcessor.setName("BeanShell PreProcessor");
 		     beanShellPreProcessor.setProperty("resetInterpreter", false);
 		     beanShellPreProcessor.setProperty("parameters", "");		 

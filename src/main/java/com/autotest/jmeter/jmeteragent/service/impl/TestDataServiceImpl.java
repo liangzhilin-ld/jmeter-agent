@@ -130,10 +130,10 @@ public class TestDataServiceImpl {
 		QueryWrapper<ScenarioReport> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(ScenarioReport::getHistoryId,job.getHistoryId())
 							.eq(ScenarioReport::getJobId,job.getId())
-							.select(ScenarioReport::getTcResult);
+							.select(ScenarioReport::getTcId,ScenarioReport::getTcResult);
 		List<ScenarioReport> apiList=apiReport.list(queryWrapper);
 		List<ScenarioReport> succList=apiList.stream()
-				.filter(s -> s.getTcResult().equals(true))
+				.filter(s -> s.getTcResult()==null||s.getTcResult().equals(true))
 				.collect(Collectors.toList());
 		UpdateWrapper<ApiReportHistoryList> updateWrapper = new UpdateWrapper<>();
 		updateWrapper.lambda().set(ApiReportHistoryList::getTcPassed, succList.size())

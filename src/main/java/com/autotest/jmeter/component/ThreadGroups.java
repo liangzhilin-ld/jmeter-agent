@@ -21,7 +21,6 @@ public class ThreadGroups {
     	threadGroup.setEnabled(true);
         threadGroup.setName(tgentity.getName());  
         threadGroup.setProperty(new StringProperty(ThreadGroup.ON_SAMPLE_ERROR, tgentity.getOnSampleError()));
-//        threadGroup.setProperty(ThreadGroup.ON_SAMPLE_ERROR, tgentity.getOnSampleError()); 
 //        threadGroup.setNumThreads(5);
 //        threadGroup.setRampUp(5);        
         threadGroup.setProperty(ThreadGroup.NUM_THREADS,tgentity.getNumThreads());//

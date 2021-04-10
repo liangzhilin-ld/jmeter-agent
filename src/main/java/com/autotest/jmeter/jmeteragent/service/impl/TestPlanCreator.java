@@ -89,7 +89,7 @@ public class TestPlanCreator {
     }
 
     public HashTree create(TestScheduled trig) {
-//    	com.autotest.jmeter.jmeteragent.config.TestPlanCreator.run(trig);
+    	com.autotest.jmeter.jmeteragent.config.TestPlanCreator.run(trig);
         log.info("创建测试计划");
         TestPlan testPlan = new TestPlan("Test Plan");
         testPlan.setFunctionalMode(false);
@@ -102,7 +102,7 @@ public class TestPlanCreator {
         testPlan.setTestPlanClasspath("");
         Arguments arguments = new Arguments();
         testPlan.setUserDefinedVariables(arguments);
-        ListedHashTree testPlanTree = new ListedHashTree(testPlan);
+        ListedHashTree testPlanTree = new ListedHashTree();
         
         //-------------------------------------------------------------------------------------------
         log.info("创建公共配置");  
@@ -146,7 +146,7 @@ public class TestPlanCreator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
+        //testPlanTree.add(testPlan,Listener.backendListener(trig.getId(),trig.getHistoryId(), ApiRunMode.RUN.name()));
         return testPlanTree;
     }
     /**

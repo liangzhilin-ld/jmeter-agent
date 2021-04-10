@@ -58,7 +58,6 @@ public class ConfigElement {
     	 cong.removeProperty(HTTPSamplerBase.IP_SOURCE);
     	 cong.removeProperty(HTTPSamplerBase.IP_SOURCE_TYPE);
     	 
-    	 
     	 cong.setProperty(new StringProperty(TestElement.TEST_CLASS,  ConfigTestElement.class.getName()));
          cong.setProperty(new StringProperty(TestElement.GUI_CLASS,  HttpDefaultsGui.class.getName()));//"org.apache.jmeter.protocol.http.config.gui.HttpDefaultsGui"
          cong.setProperty(TestElement.NAME, "http默认请求");
