@@ -1,0 +1,38 @@
+server:
+  port: 9090
+
+# jmeter 默认配置项
+jmeter:
+  home: E:\automation\Appache\apache-jmeter-5.3
+  propertiesFileName: bin\jmeter.properties
+  scheduler: true
+  delay: 0
+  loops: 1
+  logPath: jtl
+  resultReceiverUrl: http://172.16.206.128:8888/test/performance/jmeter-result
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://172.16.206.51:3306/autoplat2?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: vbi
+    password: Test*123456
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false  
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    auto-mapping-behavior: full
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+  global-config:
+    #字段策略 0:"忽略判断",1:"非 NULL 判断"),2:"非空判断"
+    #field-strategy: 1
+    # 逻辑删除配置
+    db-config:
+      # 删除前
+      logic-not-delete-value: 1
+      # 删除后
+      logic-delete-value: 0

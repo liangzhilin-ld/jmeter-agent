@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-parent</artifactId>
+	<version>2.3.3.RELEASE</version>
+	<relativePath/> <!-- lookup parent from repository -->
+  </parent>
+  <groupId>com.autotest.jmeter</groupId>
+  <artifactId>jmeter-agent</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <description>Jmeter代理程序</description>
+  <packaging>jar</packaging>
+  <name>jmeter-agent</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.junit.vintage</groupId>
+					<artifactId>junit-vintage-engine</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+	  		<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>1.2.73</version>
+	  	</dependency>
+	  		 <!--国密-->
+		<dependency>
+	    	<groupId>org.bouncycastle</groupId>
+	    	<artifactId>bcprov-jdk15on</artifactId>
+	    	<version>1.56</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.json</groupId>
+    		<artifactId>json</artifactId>
+    		<version>20180813</version>
+		</dependency>
+	  	<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+		</dependency>
+	  	<dependency>
+	  		<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_core</artifactId>
+			<version>5.3</version>
+			<exclusions>
+	            <exclusion>
+	                <groupId>org.apache.logging.log4j</groupId>
+	                <artifactId>log4j-to-slf4j</artifactId>
+	            </exclusion>
+	        </exclusions>
+	  	</dependency>
+	  	<dependency>
+			<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_components</artifactId>
+			<version>5.3</version>
+			<exclusions>
+	            <exclusion>
+	                <groupId>org.apache.logging.log4j</groupId>
+	                <artifactId>log4j-to-slf4j</artifactId>
+	            </exclusion>
+	        </exclusions>	
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.jmeter</groupId>
+		    <artifactId>ApacheJMeter_config</artifactId>
+		    <version>5.3</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.apache.jmeter</groupId>
+    		<artifactId>ApacheJMeter_jdbc</artifactId>
+    		<version>5.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_http</artifactId>
+			<version>5.3</version>
+			<exclusions>
+	           	<exclusion>
+	               <groupId>org.apache.logging.log4j</groupId>
+	               <artifactId>log4j-to-slf4j</artifactId>
+	           	</exclusion>
+	       	</exclusions>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.jmeter/ApacheJMeter_functions -->
+		<dependency>
+		    <groupId>org.apache.jmeter</groupId>
+		    <artifactId>ApacheJMeter_functions</artifactId>
+		    <version>5.3</version>
+		</dependency>
+				
+		<dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
+        </dependency>
+        <dependency>
+   			<groupId>org.apache.commons</groupId>
+   			<artifactId>commons-text</artifactId>
+   			<version>1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>1.3.9</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.7.2</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.apache.commons</groupId>
+    		<artifactId>commons-dbcp2</artifactId>
+    	</dependency>
+    	<!-- https://mvnrepository.com/artifact/commons-collections/commons-collections -->
+		<dependency>
+    		<groupId>commons-collections</groupId>
+    		<artifactId>commons-collections</artifactId>
+    		<version>3.2.2</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/kg.apc/jmeter-plugins-dummy -->
+		<dependency>
+    		<groupId>kg.apc</groupId>
+    		<artifactId>jmeter-plugins-dummy</artifactId>
+    		<version>0.4</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/kg.apc/jmeter-plugins-cmn-jmeter -->
+<dependency>
+    <groupId>kg.apc</groupId>
+    <artifactId>jmeter-plugins-cmn-jmeter</artifactId>
+    <version>0.6</version>
+</dependency>
+		
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger-ui -->
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.autotest</groupId>
+			<artifactId>auto-data</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+    		<groupId>cn.hutool</groupId>
+    		<artifactId>hutool-core</artifactId>
+    		<version>5.4.7</version>
+		</dependency>
+  </dependencies>
+  	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
