@@ -20,8 +20,9 @@ package org.apache.jmeter.protocol.http.sampler;
 import java.net.URL;
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.samplers.Interruptible;
-import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
-import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
+
+import com.autotest.jmeter.jmeteragent.common.TestDataServiceImpl;
+import com.autotest.jmeter.jmeteragent.testplan.JmeterHashTreeServiceImpl;
 import com.autotest.util.SpringContextUtil;
 
 

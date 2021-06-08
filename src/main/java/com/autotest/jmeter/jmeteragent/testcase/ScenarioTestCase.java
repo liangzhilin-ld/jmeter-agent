@@ -19,8 +19,8 @@ import com.autotest.data.mode.TestScheduled;
 import com.autotest.jmeter.component.HTTPSampler;
 import com.autotest.jmeter.component.LogicController;
 import com.autotest.jmeter.component.ThreadGroups;
-import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
-import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
+import com.autotest.jmeter.jmeteragent.common.TestDataServiceImpl;
+import com.autotest.jmeter.jmeteragent.testplan.JmeterHashTreeServiceImpl;
 
 public class ScenarioTestCase {
 	private @Autowired TestDataServiceImpl testData;

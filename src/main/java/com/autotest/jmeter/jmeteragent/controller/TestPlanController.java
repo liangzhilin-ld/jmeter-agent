@@ -19,12 +19,12 @@ import com.autotest.data.mode.ScenarioReport;
 import com.autotest.data.mode.ScenarioTestcase;
 //import com.autotest.data.mode.ApiTestcase2;
 import com.autotest.data.mode.TestScheduled;
-//import com.techstar.dmp.jmeteragent.bean.Response;
+import com.autotest.jmeter.jmeteragent.common.TestDataServiceImpl;
+import com.autotest.jmeter.jmeteragent.report.APIReportService;
 import com.autotest.jmeter.jmeteragent.service.TestPlanService;
-import com.autotest.jmeter.jmeteragent.service.impl.APIReportService;
-import com.autotest.jmeter.jmeteragent.service.impl.JmeterHashTreeServiceImpl;
-import com.autotest.jmeter.jmeteragent.service.impl.TestDataServiceImpl;
-import com.autotest.jmeter.jmeteragent.service.impl.TestPlanServiceImpl;
+import com.autotest.jmeter.jmeteragent.testplan.JmeterHashTreeServiceImpl;
+import com.autotest.jmeter.jmeteragent.testplan.TestPlanServiceImpl;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
