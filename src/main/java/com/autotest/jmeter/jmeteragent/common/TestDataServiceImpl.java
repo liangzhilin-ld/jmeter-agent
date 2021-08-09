@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,7 @@ import com.autotest.data.mode.custom.SamplerReport;
 import com.autotest.data.service.impl.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import cn.hutool.core.collection.ListUtil;
+//import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 
 /**
@@ -67,6 +69,7 @@ public class TestDataServiceImpl {
 	public List<ApiHeader> getSamplerHeader(int caseId) {
 		QueryWrapper<HttpTestcase> queryWrapper = new QueryWrapper<>();
 		queryWrapper.lambda().eq(HttpTestcase::getCaseId,caseId);
+		
 	    return httpServer.getOne(queryWrapper).getHeaders();
 	}
 	public List<ApiHeader> getPubHeader(int projectId) {
